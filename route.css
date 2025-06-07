@@ -1,0 +1,727 @@
+  
+
+    /* Using your custom variables */
+:root {
+  --wine: #722f37;
+  --teal: #0e386a;
+  --white: #ffffff;
+  --soft-blue: #4a90e2;
+  --glass-blur: 8px;
+  --poppins: 'Poppins', sans-serif;
+  --lato: 'Lato', sans-serif;
+}
+
+/* Glass Effect Mixin */
+.glass-effect-js {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+
+/* Routes Section - Ultra Premium */
+.routes-section-js {
+  background: var(--white);
+  padding: 80px 0;
+  font-family: var(--poppins);
+}
+
+.section-header-js {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.section-header-js h2 {
+  font-size: 2.8rem;
+  color: var(--teal);
+  margin-bottom: 15px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.section-subtitle-js {
+  color: var(--teal);
+  opacity: 0.8;
+  font-size: 1.2rem;
+  max-width: 600px;
+  margin: 0 auto;
+  font-weight: 300;
+}
+
+.routes-carousel-container-js {
+  position: relative;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 80px;
+}
+
+.routes-carousel-js {
+  display: flex;
+  gap: 30px;
+  padding: 40px 20px;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+
+}
+
+.route-card-js {
+  flex: 0 0 280px;
+  scroll-snap-align: start;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  height: 380px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+  background-size: cover;
+  background-position: center;
+
+}
+
+.route-card-js:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+}
+
+.route-card-js[data-destination="Real, Quezon Province"] {
+  background-image: url('https://shoestringdiary.wordpress.com/wp-content/uploads/2017/10/balagbag_falls06ss_diaries.jpg?w=1366');
+}
+.route-card-js[data-destination="Sta. Maria, Laguna"] {
+  background-image: url('https://static.rome2rio.com/lp-proxy/assets/drive-landscape-1920px-Dx6xCWtu.jpeg');
+}
+.route-card-js[data-destination="Baras, Rizal"] {
+  background-image: url('https://images.summitmedia-digital.com/spotph/images/2019/04/02/rizal-thingstodo-masungi-1554201379.jpg');
+}
+.route-card-js[data-destination="Pinugay, Antipolo"] {
+  background-image: url('https://static-ph.lamudi.com/static/media/bm9uZS9ub25l/2x2x2x380x244/7e6612ef5e9eb3.webp');
+}
+.route-card-js[data-destination="Boso-Boso, Antipolo"] {
+  background-image: url('https://pbs.twimg.com/media/ERxSYIbUcAAs71b.jpg');
+}
+.route-card-js[data-destination="Padilla, Antipolo"] {
+  background-image: url('https://media.philstar.com/photos/2024/07/04/hurch_2024-07-04_16-34-26.jpg');
+}
+.route-card-js[data-destination="Cogeo Avenue, Antipolo"] {
+  background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTzP4ZETMAz5EoFuUODLWwlSpYsMIO2To--Mw&s');
+}
+.route-card-js[data-destination="Marikina"] {
+  background-image: url('https://thelightandthesword.wordpress.com/wp-content/uploads/2017/03/wp-image-1004222293jpg1.jpg');
+}
+.route-card-js[data-destination="Rizal"] {
+  background-image: url('https://www.lumina.com.ph/assets/news-and-blogs-photos/Reasons-Why-Rizal-Province-Makes-a-Perfect-Home-Location/Access-the-benefits-rolling-hills-refreshing-cool-winds-and-idyllic-lifestyle-in-the-East.webp');
+}
+.route-card-js[data-destination="Quezon City"] {
+  background-image: url('https://propertyreport.ph/wp-content/uploads/2023/03/QC-smart-city-3.jpg');
+}
+.route-card-js[data-destination="Sta. Mesa, Manila"] {
+  background-image: url('https://contents.smsupermalls.com/data/uploads/2018/04/SMST.jpg');
+}
+.route-card-js[data-destination="Famy, Laguna"] {
+  background-image: url('https://steemitimages.com/DQmf1fGMh6B6qE7UNBrE68FqaGeQKuVN3YmcpomtXLeVVwH/155039_628538763838279_2028594241_n.jpg');
+}
+.route-card-js[data-destination="Mabitac, Laguna"] {
+  background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Mabitac%2CLagunaChurchjf1194_03.JPG/250px-Mabitac%2CLagunaChurchjf1194_03.JPG');
+}
+.route-card-js[data-destination="Pililla, Rizal"] {
+  background-image: url('https://iamtravelinglight.com/wp-content/uploads/2016/09/watermarked-windmills-from-a-distance-3-from-pineapple-plantation-sweetest-pililla-wind-farm-rizal-wind-power.jpg');
+}
+.route-card-js[data-destination="Tanay, Rizal"] {
+  background-image: url('https://images.alltrails.com/eyJidWNrZXQiOiJhc3NldHMuYWxsdHJhaWxzLmNvbSIsImtleSI6InVwbG9hZHMvcGhvdG8vaW1hZ2UvNjgzMDI1NTYvNzg2ZTk1OTlhYjJlNmU3MTBhNDM0NzdjN2Y1MmVhMjQuanBnIiwiZWRpdHMiOnsidG9Gb3JtYXQiOiJqcGVnIiwicmVzaXplIjp7IndpZHRoIjo1MDAsImhlaWdodCI6NTAwLCJmaXQiOiJpbnNpZGUifSwicm90YXRlIjpudWxsLCJqcGVnIjp7InRyZWxsaXNRdWFudGlzYXRpb24iOnRydWUsIm92ZXJzaG9vdERlcmluZ2luZyI6dHJ1ZSwib3B0aW1pc2VTY2FucyI6dHJ1ZSwicXVhbnRpc2F0aW9uVGFibGUiOjN9fX0=');
+}
+.route-card-js[data-destination="Morong, Rizal"] {
+  background-image: url('https://www.bria.com.ph/wp-content/uploads/2021/12/morong-historical-tourist-sites.jpg');
+}
+.route-card-js[data-destination="Teresa, Rizal"] {
+  background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/SantaRosadeLimadeTeresa.jpg/250px-SantaRosadeLimadeTeresa.jpg');
+}
+.route-card-js[data-destination="Antipolo, Rizal"] {
+  background-image: url('https://images.squarespace-cdn.com/content/v1/5fa1522044bdda192713063c/1629979877655-HZWWMTBLO1H35MDLV0WT/View+from+Yellow+Lantern+Cafe+in+Antipolo');
+}
+.route-card-js[data-destination="Masinag, Antipolo"] {
+  background-image: url('https://contents.smsupermalls.com/data/uploads/2018/04/SMMS.jpg');
+}
+.route-card-js[data-destination="San Juan, Manila"] {
+  background-image: url('https://www.marc7travels.com/uploads/5/1/4/9/51490145/3534685.jpg?406');
+}
+.route-card-js[data-destination="Legarda, Sampaloc, Manila"] {
+  background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/C.M._Recto_cor._Legarda_Street_%28Sampaloc%2C_Manila%29%282018-10-09%29.jpg/960px-C.M._Recto_cor._Legarda_Street_%28Sampaloc%2C_Manila%29%282018-10-09%29.jpg?20181101040715');
+}
+.route-card-js[data-destination="Sta. Teresita, Sampaloc, Manila"] {
+  background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Boulevard_Espa%C3%B1a%2C_Manila%2C_Filipinas%2C_2023-08-27%2C_DD_01.jpg/250px-Boulevard_Espa%C3%B1a%2C_Manila%2C_Filipinas%2C_2023-08-27%2C_DD_01.jpg');
+}
+
+
+/* Add other destination backgrounds */
+
+
+/* ----------------------------------------------------------------------------------------------------------- 
+  -----------------------------------------------------------------------------------------------------------
+  -----------------------------------------------------------------------------------------------------------
+  -----------------------------------------------------------------------------------------------------------*/
+
+
+.card-glass-js {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg, 
+    rgba(114, 47, 55, 0.3) 0%, 
+    rgba(14, 56, 106, 0.5) 100%
+  );
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.route-content-js {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 30px;
+  color: var(--white);
+}
+
+.destination-marker-js {
+  align-self: flex-start;
+  background: rgba(255,255,255,0.2);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.destination-marker-js i {
+  font-size: 1.5rem;
+}
+
+.destination-info-js {
+  margin-top: auto;
+}
+
+.destination-info-js h3 {
+  font-size: 2rem;
+  margin: 0 0 5px 0;
+  font-weight: 700;
+  line-height: 1.2;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.province-js {
+  font-size: 1rem;
+  opacity: 0.9;
+  display: block;
+  font-weight: 300;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.route-meta-js {
+  display: flex;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.route-meta-js span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.95rem;
+  background: rgba(255,255,255,0.15);
+  padding: 5px 12px;
+  border-radius: 20px;
+  backdrop-filter: blur(5px);
+}
+
+.book-route-btn-js {
+  align-self: flex-start;
+  color: var(--white);
+  border: none;
+  padding: 12px 25px;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.book-route-btn-js:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.book-route-btn-js i {
+  transition: transform 0.3s ease;
+}
+
+.book-route-btn-js:hover i {
+  transform: translateX(3px);
+}
+
+/* Navigation Controls */
+.carousel-nav-js {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: 60px;
+  background: var(--white);
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  cursor: pointer;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--teal);
+  font-size: 1.3rem;
+  transition: all 0.3s ease;
+}
+
+.carousel-nav-js:hover {
+  transform: translateY(-50%) scale(1.1);
+  color: var(--wine);
+}
+
+.carousel-nav-js.prev-js {
+  left: 10px;
+}
+
+.carousel-nav-js.next-js {
+  right: 10px;
+}
+
+.carousel-nav-js:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.carousel-dots-js {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 30px;
+  visibility: hidden;
+}
+
+.carousel-dot-js {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(14, 56, 106, 0.3);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+
+.carousel-dot-js.active-js {
+  background: var(--teal);
+  transform: scale(1.3);
+}
+
+/* Destination Modal */
+.destination-modal-js {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  
+}
+
+.destination-modal-js.active-js {
+  display: flex;
+}
+
+.modal-glass-backdrop-js {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(5px);
+}
+
+.modal-content-js {
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalFadeIn-js 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+  box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+@keyframes modalFadeIn-js {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.close-modal-js {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: var(--teal);
+  transition: color 0.3s ease;
+  z-index: 3;
+}
+
+.close-modal-js:hover {
+  color: var(--wine);
+}
+
+.modal-header-js {
+  padding: 30px 30px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.destination-icon-js {
+  width: 50px;
+  height: 50px;
+  background: var(--teal);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.modal-header-js h3 {
+  font-size: 1.8rem;
+  margin: 0;
+  color: var(--teal);
+}
+
+.modal-header-js .province-js {
+  font-size: 1rem;
+  color: var(--teal);
+  opacity: 0.8;
+  display: block;
+  margin-top: 3px;
+}
+
+.modal-body-js {
+  padding: 20px 30px;
+}
+
+.detail-cards-js {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.detail-card-js {
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.3s ease;
+}
+
+.detail-card-js:hover {
+  transform: translateY(-3px);
+}
+
+.detail-card-js i {
+  font-size: 1.5rem;
+  color: var(--wine);
+}
+
+.detail-label-js {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--teal);
+  opacity: 0.8;
+  margin-bottom: 3px;
+}
+
+.detail-value-js {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--teal);
+}
+
+.route-highlights-js {
+  margin-top: 25px;
+}
+
+.route-highlights-js h4 {
+  color: var(--teal);
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.route-highlights-js ul {
+  list-style: none;
+  padding: 0;
+}
+
+.route-highlights-js li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: var(--teal);
+}
+
+.route-highlights-js i {
+  color: var(--wine);
+  width: 20px;
+  text-align: center;
+}
+
+.modal-footer-js {
+  padding: 20px 30px;
+  text-align: center;
+}
+
+.book-route-btn-js.large-js {
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  background: var(--teal);
+  color: white;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.book-route-btn-js.large-js:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .routes-carousel-container-js {
+    padding: 0 50px;
+  }
+}
+
+@media (max-width: 768px) {
+  .section-header-js h2 {
+    font-size: 2.2rem;
+  }
+  
+  .routes-carousel-container-js {
+    padding: 0 30px;
+  }
+  
+  .carousel-nav-js {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .route-card-js {
+    flex: 0 0 260px;
+    height: 350px;
+  }
+  
+  .modal-content-js {
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 576px) {
+  .routes-carousel-container-js {
+    padding: 0 20px;
+  }
+  
+  .detail-cards-js {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-header-js {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .destination-icon-js {
+    margin-bottom: 10px;
+  }
+}
+
+
+
+@media (max-width: 480px) {
+
+  .destination-modal-js {
+    padding-top: 70px; /* Add padding to account for fixed header */
+    align-items: flex-start; /* Align to top instead of center */
+    padding-bottom: 20px;
+  }
+
+
+  /* Routes Section Mobile Styles */
+  .routes-section-js {
+    padding: 40px 0;
+  }
+
+  .section-header-js h2 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+  }
+
+  .section-subtitle-js {
+    font-size: 1rem;
+    padding: 0 15px;
+  }
+
+  .routes-carousel-container-js {
+    padding: 0 15px;
+  }
+
+  .routes-carousel-js {
+    gap: 15px;
+    padding: 20px 10px;
+    overflow-x: auto; 
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .route-card-js {
+    flex: 0 0 85%;
+    height: 320px;
+    scroll-snap-align: center;
+  }
+
+  .route-card-js:hover {
+    transform: none; 
+  }
+
+  .route-content-js {
+    padding: 20px;
+  }
+
+  .destination-marker-js {
+    width: 40px;
+    height: 40px;
+  }
+
+  .destination-info-js h3 {
+    font-size: 1.5rem;
+  }
+
+  .route-meta-js {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 15px 0;
+  }
+
+  .route-meta-js span {
+    font-size: 0.8rem;
+    padding: 4px 10px;
+  }
+
+  .book-route-btn-js {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+
+  /* Hide desktop navigation arrows */
+  .carousel-nav-js {
+    display: none;
+  }
+
+  /* Show dots for mobile */
+  .carousel-dots-js {
+    visibility: hidden;
+    margin-top: 20px;
+  }
+
+  /* Modal adjustments */
+  .modal-content-js {
+    margin-top: 3px; /* Remove any default margin */
+    max-height: calc(100vh - 80px); /* Account for header height */
+    max-width: calc(100vh - 80px); /* Account for header height */
+    overflow-y: auto; /* Ensure scrolling within modal */
+  }
+
+  .modal-header-js {
+    padding: 20px 20px 15px;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .modal-header-js h3 {
+    font-size: 1.5rem;
+  }
+
+  .modal-body-js {
+    max-height: calc(100vh - 200px); /* Adjust based on your header height */
+    overflow-y: auto;
+  }
+
+  .close-modal-js {
+    top: 10px;
+    right: 10px;
+    background: rgba(255,255,255,0.8);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .detail-cards-js {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .detail-card-js {
+    padding: 12px;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .detail-card-js i {
+    font-size: 1.2rem;
+  }
+
+  .detail-value-js {
+    font-size: 1rem;
+  }
+
+  .book-route-btn-js.large-js {
+    padding: 12px 25px;
+    width: 100%;
+    justify-content: center;
+  }
+}

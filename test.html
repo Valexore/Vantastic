@@ -1,0 +1,1204 @@
+
+<style>
+    /* Using your custom variables */
+:root {
+  --wine: #722f37;
+  --teal: #0e386a;
+  --white: #ffffff;
+  --soft-blue: #4a90e2;
+  --glass-blur: 8px;
+  --poppins: 'Poppins', sans-serif;
+  --lato: 'Lato', sans-serif;
+}
+
+/* Glass Effect Mixin */
+.glass-effect-js {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+/* Routes Section - Ultra Premium */
+.routes-section-js {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+  padding: 80px 0;
+  font-family: var(--poppins);
+}
+
+.section-header-js {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.section-header-js h2 {
+  font-size: 2.8rem;
+  color: var(--teal);
+  margin-bottom: 15px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.section-subtitle-js {
+  color: var(--teal);
+  opacity: 0.8;
+  font-size: 1.2rem;
+  max-width: 600px;
+  margin: 0 auto;
+  font-weight: 300;
+}
+
+.routes-carousel-container-js {
+  position: relative;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 80px;
+}
+
+.routes-carousel-js {
+  display: flex;
+  gap: 30px;
+  padding: 40px 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+
+}
+
+.route-card-js {
+  flex: 0 0 280px;
+  scroll-snap-align: start;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  height: 380px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.route-card-js:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+}
+
+.route-card-js[data-destination="Real, Quezon Province"] {
+  background-image: url('img/real-bg.jpg');
+}
+
+/* Add other destination backgrounds */
+
+.card-glass-js {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg, 
+    rgba(114, 47, 55, 0.3) 0%, 
+    rgba(14, 56, 106, 0.5) 100%
+  );
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.route-content-js {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 30px;
+  color: var(--white);
+}
+
+.destination-marker-js {
+  align-self: flex-start;
+  background: rgba(255,255,255,0.2);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.destination-marker-js i {
+  font-size: 1.5rem;
+}
+
+.destination-info-js {
+  margin-top: auto;
+}
+
+.destination-info-js h3 {
+  font-size: 2rem;
+  margin: 0 0 5px 0;
+  font-weight: 700;
+  line-height: 1.2;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.province-js {
+  font-size: 1rem;
+  opacity: 0.9;
+  display: block;
+  font-weight: 300;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.route-meta-js {
+  display: flex;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.route-meta-js span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.95rem;
+  background: rgba(255,255,255,0.15);
+  padding: 5px 12px;
+  border-radius: 20px;
+  backdrop-filter: blur(5px);
+}
+
+.book-route-btn-js {
+  align-self: flex-start;
+  color: var(--white);
+  border: none;
+  padding: 12px 25px;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.book-route-btn-js:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.book-route-btn-js i {
+  transition: transform 0.3s ease;
+}
+
+.book-route-btn-js:hover i {
+  transform: translateX(3px);
+}
+
+/* Navigation Controls */
+.carousel-nav-js {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: 60px;
+  background: var(--white);
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  cursor: pointer;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--teal);
+  font-size: 1.3rem;
+  transition: all 0.3s ease;
+}
+
+.carousel-nav-js:hover {
+  transform: translateY(-50%) scale(1.1);
+  color: var(--wine);
+}
+
+.carousel-nav-js.prev-js {
+  left: 10px;
+}
+
+.carousel-nav-js.next-js {
+  right: 10px;
+}
+
+.carousel-nav-js:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.carousel-dots-js {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.carousel-dot-js {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(14, 56, 106, 0.3);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+
+.carousel-dot-js.active-js {
+  background: var(--teal);
+  transform: scale(1.3);
+}
+
+/* Destination Modal */
+.destination-modal-js {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.destination-modal-js.active-js {
+  display: flex;
+}
+
+.modal-glass-backdrop-js {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(5px);
+}
+
+.modal-content-js {
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalFadeIn-js 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+  box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+@keyframes modalFadeIn-js {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.close-modal-js {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: var(--teal);
+  transition: color 0.3s ease;
+  z-index: 3;
+}
+
+.close-modal-js:hover {
+  color: var(--wine);
+}
+
+.modal-header-js {
+  padding: 30px 30px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.destination-icon-js {
+  width: 50px;
+  height: 50px;
+  background: var(--teal);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.modal-header-js h3 {
+  font-size: 1.8rem;
+  margin: 0;
+  color: var(--teal);
+}
+
+.modal-header-js .province-js {
+  font-size: 1rem;
+  color: var(--teal);
+  opacity: 0.8;
+  display: block;
+  margin-top: 3px;
+}
+
+.modal-body-js {
+  padding: 20px 30px;
+}
+
+.detail-cards-js {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.detail-card-js {
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.3s ease;
+}
+
+.detail-card-js:hover {
+  transform: translateY(-3px);
+}
+
+.detail-card-js i {
+  font-size: 1.5rem;
+  color: var(--wine);
+}
+
+.detail-label-js {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--teal);
+  opacity: 0.8;
+  margin-bottom: 3px;
+}
+
+.detail-value-js {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--teal);
+}
+
+.route-highlights-js {
+  margin-top: 25px;
+}
+
+.route-highlights-js h4 {
+  color: var(--teal);
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.route-highlights-js ul {
+  list-style: none;
+  padding: 0;
+}
+
+.route-highlights-js li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: var(--teal);
+}
+
+.route-highlights-js i {
+  color: var(--wine);
+  width: 20px;
+  text-align: center;
+}
+
+.modal-footer-js {
+  padding: 20px 30px;
+  text-align: center;
+}
+
+.book-route-btn-js.large-js {
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, var(--wine) 0%, var(--teal) 100%);
+  color: white;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.book-route-btn-js.large-js:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .routes-carousel-container-js {
+    padding: 0 50px;
+  }
+}
+
+@media (max-width: 768px) {
+  .section-header-js h2 {
+    font-size: 2.2rem;
+  }
+  
+  .routes-carousel-container-js {
+    padding: 0 30px;
+  }
+  
+  .carousel-nav-js {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .route-card-js {
+    flex: 0 0 260px;
+    height: 350px;
+  }
+  
+  .modal-content-js {
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 576px) {
+  .routes-carousel-container-js {
+    padding: 0 20px;
+  }
+  
+  .detail-cards-js {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-header-js {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .destination-icon-js {
+    margin-bottom: 10px;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+.route-card-js[data-destination="Real, Quezon Province"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Sta. Maria, Laguna"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Baras, Rizal"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Pinugay, Antipolo"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Boso-Boso, Antipolo"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Padilla, Antipolo"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Cogeo Avenue, Antipolo"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Marikina"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Rizal"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Quezon City"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Sta. Mesa, Manila"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Famy, Laguna"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Mabitac, Laguna"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Pililla, Rizal"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Tanay, Rizal"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Morong, Rizal"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Teresa, Rizal"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Antipolo, Rizal"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Masinag, Antipolo"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="San Juan, Manila"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Legarda, Sampaloc, Manila"] {
+  background-image: url('img/pres.png');
+}
+.route-card-js[data-destination="Sta. Teresita, Sampaloc, Manila"] {
+  background-image: url('img/pres.png');
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</style>
+
+<section id="routesSection" class="section routes-section-js">
+  <div class="section-header-js">
+    <h2>Discover Our Destinations</h2>
+    <p class="section-subtitle-js">Premium travel experience across Luzon's best locations</p>
+  </div>
+
+  <div class="routes-carousel-container-js">
+    <button class="carousel-nav-js prev-js" aria-label="Previous destination">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    
+    <div class="routes-carousel-js">
+      <!-- Real, Quezon Province -->
+      <div class="route-card-js" data-destination="Real, Quezon Province" data-time="3-4 hours" data-fare="₱350" data-stop="Infanta">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Real</h3>
+            <span class="province-js">Quezon Province</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 3-4h</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱350</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Sta. Maria, Laguna -->
+      <div class="route-card-js" data-destination="Sta. Maria, Laguna" data-time="2.5 hours" data-fare="₱300" data-stop="Famy">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Sta. Maria</h3>
+            <span class="province-js">Laguna</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 2.5h</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱300</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Baras, Rizal -->
+      <div class="route-card-js" data-destination="Baras, Rizal" data-time="1.5 hours" data-fare="₱250" data-stop="Tanay">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Baras</h3>
+            <span class="province-js">Rizal</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 1.5h</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱250</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Pinugay, Antipolo -->
+      <div class="route-card-js" data-destination="Pinugay, Antipolo" data-time="1 hour" data-fare="₱200" data-stop="Antipolo">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Pinugay</h3>
+            <span class="province-js">Antipolo</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 1h</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱200</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Boso-Boso, Antipolo -->
+      <div class="route-card-js" data-destination="Boso-Boso, Antipolo" data-time="1.25 hours" data-fare="₱220" data-stop="Antipolo">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Boso-Boso</h3>
+            <span class="province-js">Antipolo</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 1.25h</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱220</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Padilla, Antipolo -->
+      <div class="route-card-js" data-destination="Padilla, Antipolo" data-time="1 hour" data-fare="₱180" data-stop="Antipolo">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Padilla</h3>
+            <span class="province-js">Antipolo</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 1h</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱180</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Cogeo Avenue, Antipolo -->
+      <div class="route-card-js" data-destination="Cogeo Avenue, Antipolo" data-time="45 mins" data-fare="₱150" data-stop="Antipolo">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Cogeo Avenue</h3>
+            <span class="province-js">Antipolo</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 45m</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱150</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Marikina -->
+      <div class="route-card-js" data-destination="Marikina" data-time="30 mins" data-fare="₱120" data-stop="Cubao">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Marikina</h3>
+            <span class="province-js">Metro Manila</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 30m</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱120</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Rizal -->
+      <div class="route-card-js" data-destination="Rizal" data-time="1.5 hours" data-fare="₱250" data-stop="Antipolo">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Rizal</h3>
+            <span class="province-js">Province</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 1.5h</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱250</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Quezon City -->
+      <div class="route-card-js" data-destination="Quezon City" data-time="25 mins" data-fare="₱100" data-stop="Cubao">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Quezon City</h3>
+            <span class="province-js">Metro Manila</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 25m</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱100</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Sta. Mesa, Manila -->
+      <div class="route-card-js" data-destination="Sta. Mesa, Manila" data-time="20 mins" data-fare="₱90" data-stop="Legarda">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Sta. Mesa</h3>
+            <span class="province-js">Manila</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 20m</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱90</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Famy, Laguna -->
+      <div class="route-card-js" data-destination="Famy, Laguna" data-time="2 hours" data-fare="₱280" data-stop="Siniloan">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Famy</h3>
+            <span class="province-js">Laguna</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 2h</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱280</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Mabitac, Laguna -->
+      <div class="route-card-js" data-destination="Mabitac, Laguna" data-time="2.25 hours" data-fare="₱290" data-stop="Famy">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Mabitac</h3>
+            <span class="province-js">Laguna</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 2.25h</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱290</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Pililla, Rizal -->
+      <div class="route-card-js" data-destination="Pililla, Rizal" data-time="1.75 hours" data-fare="₱270" data-stop="Tanay">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Pililla</h3>
+            <span class="province-js">Rizal</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 1.75h</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱270</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Tanay, Rizal -->
+      <div class="route-card-js" data-destination="Tanay, Rizal" data-time="1.5 hours" data-fare="₱250" data-stop="Antipolo">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Tanay</h3>
+            <span class="province-js">Rizal</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 1.5h</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱250</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Morong, Rizal -->
+      <div class="route-card-js" data-destination="Morong, Rizal" data-time="1.25 hours" data-fare="₱230" data-stop="Baras">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Morong</h3>
+            <span class="province-js">Rizal</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 1.25h</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱230</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Teresa, Rizal -->
+      <div class="route-card-js" data-destination="Teresa, Rizal" data-time="1 hour" data-fare="₱200" data-stop="Antipolo">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Teresa</h3>
+            <span class="province-js">Rizal</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 1h</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱200</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Antipolo, Rizal -->
+      <div class="route-card-js" data-destination="Antipolo, Rizal" data-time="45 mins" data-fare="₱150" data-stop="Cogeo">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Antipolo</h3>
+            <span class="province-js">Rizal</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 45m</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱150</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Masinag, Antipolo -->
+      <div class="route-card-js" data-destination="Masinag, Antipolo" data-time="40 mins" data-fare="₱140" data-stop="Antipolo">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Masinag</h3>
+            <span class="province-js">Antipolo</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 40m</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱140</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- San Juan, Manila -->
+      <div class="route-card-js" data-destination="San Juan, Manila" data-time="20 mins" data-fare="₱90" data-stop="Cubao">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>San Juan</h3>
+            <span class="province-js">Manila</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 20m</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱90</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Legarda, Sampaloc, Manila -->
+      <div class="route-card-js" data-destination="Legarda, Sampaloc, Manila" data-time="15 mins" data-fare="₱80" data-stop="Sta. Mesa">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Legarda</h3>
+            <span class="province-js">Sampaloc, Manila</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 15m</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱80</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
+      <!-- Sta. Teresita, Sampaloc, Manila -->
+      <div class="route-card-js" data-destination="Sta. Teresita, Sampaloc, Manila" data-time="10 mins" data-fare="₱70" data-stop="Legarda">
+        <div class="card-glass-js"></div>
+        <div class="route-content-js">
+          <div class="destination-marker-js">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="destination-info-js">
+            <h3>Sta. Teresita</h3>
+            <span class="province-js">Sampaloc, Manila</span>
+          </div>
+          <div class="route-meta-js">
+            <span class="travel-time"><i class="fas fa-clock"></i> 10m</span>
+            <span class="fare"><i class="fas fa-peso-sign"></i> ₱70</span>
+          </div>
+        </div>
+        <button class="book-route-btn-js glass-effect-js" data-route-modal="loginRouteModal">
+          <span>Book Now</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+    
+    <button class="carousel-nav-js next-js" aria-label="Next destination">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
+
+  <div class="carousel-dots-js"></div>
+</section>
+
+
+<div class="destination-modal-js glass-modal-js" id="destinationInfoModal">
+  <div class="modal-glass-backdrop-js"></div>
+  <div class="modal-content-js">
+    <button class="close-modal-js">&times;</button>
+    <div class="modal-header-js">
+      <div class="destination-icon-js">
+        <i class="fas fa-map-marker-alt"></i>
+      </div>
+      <div>
+        <h3 id="modalRouteDestinationName">Real</h3>
+        <span class="province-js" id="modalRouteProvince">Quezon Province</span>
+      </div>
+    </div>
+    
+    <div class="modal-body-js">
+      <div class="detail-cards-js">
+        <div class="detail-card-js glass-effect-js">
+          <i class="fas fa-clock"></i>
+          <div>
+            <span class="detail-label-js">Travel Time</span>
+            <span class="detail-value-js" id="modalRouteTravelTime">3-4 hours</span>
+          </div>
+        </div>
+        
+        <div class="detail-card-js glass-effect-js">
+          <i class="fas fa-peso-sign"></i>
+          <div>
+            <span class="detail-label-js">Fare</span>
+            <span class="detail-value-js" id="modalRouteFare">₱350</span>
+          </div>
+        </div>
+        
+        <div class="detail-card-js glass-effect-js">
+          <i class="fas fa-map-pin"></i>
+          <div>
+            <span class="detail-label-js">Popular Stop</span>
+            <span class="detail-value-js" id="modalRoutePopularStop">Tanay</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="route-highlights-js">
+        <h4>Route Highlights</h4>
+        <ul>
+          <li><i class="fas fa-mountain"></i> Scenic mountain views</li>
+          <li><i class="fas fa-utensils"></i> Rest stops with local cuisine</li>
+          <li><i class="fas fa-wifi"></i> Free WiFi available</li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="modal-footer-js">
+      <button class="book-route-btn-js large-js glass-effect-js" data-route-modal="loginRouteModal">
+        <span>Book This Route</span>
+        <i class="fas fa-ticket-alt"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+<div class="route-card-js" data-destination="Baguio, Benguet" 
+     data-highlights='["Cool mountain climate","Pine tree views","Strawberry picking"]'
+     data-icons='["temperature-low","tree","apple-alt"]'>
+
+
+     <div class="route-card-js" data-destination="Puerto Galera, Mindoro" 
+     data-highlights='["White sand beaches","Snorkeling spots","Beachfront bars"]'
+     data-icons='["umbrella-beach","water","cocktail"]'>
+
+<div class="route-card-js" data-destination="Makati CBD, Metro Manila" 
+     data-highlights='["Modern skyscrapers","High-end shopping","Business districts"]'
+     data-icons='["building","shopping-bag","briefcase"]'>
+
+     <div class="route-card-js" data-destination="Intramuros, Manila" 
+     data-highlights='["Spanish-era architecture","Fort Santiago","Horse-drawn carriages"]'
+     data-icons='["landmark","fort-awesome","horse"]'>
+
+
+
+
+
+
