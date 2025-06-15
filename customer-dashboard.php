@@ -1,6 +1,6 @@
 <?php
 session_start();
-
+require __DIR__ . '/vendor/autoload.php'; // Add this line
 // Verify login
 if (!isset($_SESSION['user_id'])) {
   header("Location: index.php");
@@ -84,8 +84,17 @@ VALUES ($user_id, $terminal_id, $destination_id, $passenger_count, $baggage_coun
   if (mysqli_query($conn, $insert_query)) {
     $ticket_id = mysqli_insert_id($conn);
     $_SESSION['success_message'] = "";
-    header("Location: customer-dashboard.php#ticket-history");
-    exit();
+    // Generate unique barcode
+        $barcode_value = 'VT' . str_pad($ticket_id, 6, '0', STR_PAD_LEFT) . '-' . bin2hex(random_bytes(3));
+        
+        // Insert barcode into ticket_barcodes table
+        $barcode_query = "INSERT INTO ticket_barcodes (ticket_id, barcode_value) 
+                         VALUES ($ticket_id, '$barcode_value')";
+        mysqli_query($conn, $barcode_query);
+        
+        $_SESSION['success_message'] = "Ticket booked successfully! Your barcode is: $barcode_value";
+        header("Location: customer-dashboard.php#ticket-history");
+        exit();
   } else {
     // Store the error in session
     $_SESSION['error_message'] = "Error booking ticket: " . mysqli_error($conn);
@@ -443,10 +452,215 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_rating'])) {
                     <?php endforeach; ?>
                   </select>
                 </div>
-                <div class="form-group">
-                  <label for="date">Select Date:</label>
-                  <input type="date" id="date" name="date" required min="<?php echo date('Y-m-d'); ?>">
-                </div>
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="form-group">
+  <label for="bookingDate">Select Date:</label>
+  <input type="date" id="date" name="date" required min="<?php echo date('Y-m-d'); ?>">
+</div>
+
+<!-- Date Availability Modal -->
+<div id="dateAvailabilityModal" class="booking-date-modal" style="display:none;">
+  <div class="booking-modal-content">
+    <div class="booking-modal-header">
+      <i class="fas fa-calendar-times"></i>
+      <h3>Date Not Available</h3>
+    </div>
+    <div class="booking-modal-body">
+      <p id="dateModalMessage"></p>
+    </div>
+    <div class="booking-modal-footer">
+      <button id="closeDateModal" class="booking-modal-btn booking-modal-confirm">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const bookingDateInput = document.getElementById('date');
+  const dateAvailabilityModal = document.getElementById('dateAvailabilityModal');
+  const closeDateModalBtn = document.getElementById('closeDateModal');
+  const dateModalMessage = document.getElementById('dateModalMessage');
+
+  // Track modal visibility state
+  let isDateModalVisible = false;
+
+  date.addEventListener('change', function() {
+    const chosenDate = this.value;
+    const blockedDates = [
+      '2025-06-22', 
+      '2024-01-01',  
+     
+    ];
+    
+    if (blockedDates.includes(chosenDate)) {
+      // Format the date for display (e.g. "June 22, 2025")
+      const dateObj = new Date(chosenDate);
+      const formattedDate = dateObj.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+      
+      // Update modal message with formatted date
+      dateModalMessage.textContent = `${formattedDate} is not available for booking.`;
+      
+      displayDateModal();
+      this.value = ''; // Clear the selection
+    }
+  });
+
+  function displayDateModal() {
+    dateAvailabilityModal.style.display = 'flex';
+    isDateModalVisible = true;
+    // Add escape key listener when modal opens
+    document.addEventListener('keydown', handleModalEscapeKey);
+  }
+
+  function hideDateModal() {
+    dateAvailabilityModal.style.display = 'none';
+    isDateModalVisible = false;
+    // Remove escape key listener when modal closes
+    document.removeEventListener('keydown', handleModalEscapeKey);
+  }
+
+  function handleModalEscapeKey(event) {
+    if (event.key === 'Escape' && isDateModalVisible) {
+      hideDateModal();
+    }
+  }
+
+  // Close modal when clicking OK button
+  closeDateModalBtn.addEventListener('click', hideDateModal);
+
+  // Close modal when clicking outside
+  dateAvailabilityModal.addEventListener('click', function(event) {
+    if (event.target === dateAvailabilityModal) {
+      hideDateModal();
+    }
+  });
+});
+</script>
+
+<style>
+  /* Booking Date Modal Styles */
+  .booking-date-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .booking-date-modal .booking-modal-content {
+    background-color: #fff;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    animation: bookingModalAppear 0.3s ease-out;
+  }
+  
+  .booking-date-modal .booking-modal-header {
+    padding: 20px;
+    background-color: #0E386A;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .booking-date-modal .booking-modal-header i {
+    font-size: 24px;
+  }
+  
+  .booking-date-modal .booking-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+  }
+  
+  .booking-date-modal .booking-modal-body {
+    padding: 25px 20px;
+    color: #333;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  
+  .booking-date-modal .booking-modal-footer {
+    padding: 15px 20px;
+    display: flex;
+    justify-content: flex-end;
+    background-color: #f5f5f5;
+  }
+  
+  .booking-date-modal .booking-modal-btn {
+    padding: 8px 20px;
+    border-radius: 4px;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .booking-date-modal .booking-modal-confirm {
+    background-color: #0E386A;
+    color: white;
+  }
+  
+  .booking-date-modal .booking-modal-confirm:hover {
+    background-color: #0a2a52;
+  }
+  
+  @keyframes bookingModalAppear {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 <div class="form-group">
                   <label for="time">Select Time:</label>
                   <select id="time" name="time" required>
@@ -762,89 +976,396 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_rating'])) {
   </div>
 
   <!-- Ticket History Section -->
-  <section id="ticket-history" class="section">
-    <h2>Your Ticket History</h2>
+<section id="ticket-history" class="section">
+  <div class="section-header">
+    <h2><i class="fas fa-history"></i> Your Travel History</h2>
     <p class="section-description">
-      View your past ticket orders and check the status of your upcoming trips. You can rate completed rides.
+      Review your past and upcoming trips. Scan your barcode at the terminal to complete payment.
     </p>
-    <div class="history-container">
-      <?php if (empty($ticket_history)): ?>
-        <div class="no-tickets">
+  </div>
+  
+  <div class="history-controls">
+    <div class="filter-tabs">
+      <button class="filter-btn active" data-filter="all">All Tickets</button>
+      <button class="filter-btn" data-filter="upcoming">Upcoming</button>
+      <button class="filter-btn" data-filter="completed">Completed</button>
+      <button class="filter-btn" data-filter="cancelled">Cancelled</button>
+    </div>
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" id="ticket-search" placeholder="Search tickets...">
+    </div>
+  </div>
+
+  <div class="history-container">
+    <?php if (empty($ticket_history)): ?>
+      <div class="no-tickets">
+        <div class="empty-state">
           <i class="fas fa-ticket-alt"></i>
-          <p>You haven't booked any tickets yet.</p>
+          <h3>No Tickets Found</h3>
+          <p>You haven't booked any tickets yet. Ready for your first adventure?</p>
+          <a href="#ticket-ordering" class="btn btn-primary">Book Now</a>
         </div>
-      <?php else: ?>
-        <?php foreach ($ticket_history as $ticket): ?>
-          <div class="history-card">
-            <div class="history-header">
-              <span class="ticket-number">Ticket #VT<?php echo str_pad($ticket['id'], 4, '0', STR_PAD_LEFT); ?></span>
-              <span class="ticket-date"><?php echo date('F j, Y', strtotime($ticket['travel_date'])); ?></span>
+      </div>
+    <?php else: ?>
+
+      
+      <?php foreach ($ticket_history as $ticket): 
+    // Get barcode for this ticket
+    $barcode_query = "SELECT * FROM ticket_barcodes WHERE ticket_id = {$ticket['id']}";
+    $barcode_result = mysqli_query($conn, $barcode_query);
+    $barcode = mysqli_fetch_assoc($barcode_result);
+?>
+        <div class="ticket-card" data-status="<?php echo $ticket['status']; ?>">
+          <div class="ticket-header">
+            <div class="ticket-meta">
+              <span class="ticket-number">#VT<?php echo str_pad($ticket['id'], 4, '0', STR_PAD_LEFT); ?></span>
+              <span class="ticket-date">
+                <i class="far fa-calendar-alt"></i> 
+                <?php echo date('F j, Y', strtotime($ticket['travel_date'])); ?>
+                <i class="far fa-clock"></i> 
+                <?php echo date('g:i A', strtotime($ticket['travel_time'])); ?>
+              </span>
             </div>
-            <div class="history-details">
-              <div class="detail">
-                <span class="detail-label">From:</span>
-                <span class="detail-value"><?php echo htmlspecialchars($ticket['terminal_name']); ?></span>
-              </div>
-              <div class="detail">
-                <span class="detail-label">To:</span>
-                <span class="detail-value"><?php echo htmlspecialchars($ticket['destination_name']); ?></span>
-              </div>
-              <div class="detail">
-                <span class="detail-label">Passengers:</span>
-                <span class="detail-value"><?php echo $ticket['passenger_count']; ?></span>
-              </div>
-              <div class="detail">
-                <span class="detail-label">Time:</span>
-                <span class="detail-value"><?php echo date('g:i A', strtotime($ticket['travel_time'])); ?></span>
-              </div>
-              <div class="detail">
-                <span class="detail-label">Status:</span>
-                <span class="detail-value <?php echo $ticket['status']; ?>">
-                  <?php echo ucfirst($ticket['status']); ?>
-                </span>
+            <div class="ticket-status <?php echo $ticket['status']; ?>">
+              <?php 
+              echo ucfirst($ticket['status']);
+              if ($ticket['fully_paid']) {
+                echo ' • Paid';
+              }
+              ?>
+            </div>
+          </div>
+
+          <div class="ticket-body">
+            <div class="route-info">
+              <div class="route">
+                <div class="terminal">
+                  <span class="label">From</span>
+                  <h4><?php echo htmlspecialchars($ticket['terminal_name']); ?></h4>
+                </div>
+                <div class="divider">
+                  <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="destination">
+                  <span class="label">To</span>
+                  <h4><?php echo htmlspecialchars($ticket['destination_name']); ?></h4>
+                </div>
               </div>
             </div>
 
-            <?php if ($ticket['status'] === 'completed'): ?>
+<div class="ticket-details">
+    <div class="detail-group">
+        <div class="detail">
+            <span class="label"><i class="fas fa-users"></i> Passengers</span>
+            <span class="value"><?php echo $ticket['passenger_count']; ?></span>
+        </div>
+        <div class="detail">
+            <span class="label"><i class="fas fa-suitcase"></i> Baggage</span>
+            <span class="value"><?php echo $ticket['baggage_count']; ?> kg</span>
+        </div>
+        <div class="detail">
+            <span class="label"><i class="fas fa-money-bill-wave"></i> Amount</span>
+            <span class="value">₱<?php echo number_format($ticket['total_amount'], 2); ?></span>
+        </div>
+    </div>
+
+<?php if ($barcode): ?>
+<div class="barcode-section">
+    <div class="barcode-container">
+        <div class="barcode-header">
+            <span>Ticket Barcode</span>
+            <?php if ($barcode['scan_status'] == 'scanned'): ?>
+                <span class="scan-status scanned">
+                    <i class="fas fa-check-circle"></i> Scanned at <?php echo date('M j, g:i A', strtotime($barcode['scan_time'])); ?>
+                </span>
+            <?php else: ?>
+                <span class="scan-status unscanned">
+                    <i class="fas fa-hourglass-half"></i> Not yet scanned
+                </span>
+            <?php endif; ?>
+        </div>
+        
+        <div class="barcode-image-container">
+            <?php
+            try {
+                // Debug output
+                echo "<!-- Barcode debug info:\n";
+                echo "Barcode value: " . htmlspecialchars($barcode['barcode_value']) . "\n";
+                echo "GD installed: " . (extension_loaded('gd') ? 'Yes' : 'No') . "\n";
+                echo "Picqer loaded: " . (class_exists('Picqer\Barcode\BarcodeGeneratorPNG') ? 'Yes' : 'No') . "\n";
+                echo "-->\n";
+                
+                $generator = new Picqer\Barcode\BarcodeGeneratorPNG();
+                $barcodeImage = $generator->getBarcode(
+                    $barcode['barcode_value'], 
+                    $generator::TYPE_CODE_128,
+                    2, // Width
+                    50, // Height
+                    [0, 0, 0] // Black color
+                );
+                
+                if ($barcodeImage === false) {
+                    throw new Exception('Barcode generation returned false');
+                }
+                
+                $barcodeDataUri = 'data:image/png;base64,' . base64_encode($barcodeImage);
+                ?>
+                <img src="<?= $barcodeDataUri ?>" alt="Ticket Barcode" class="barcode-img">
+                <div class="barcode-number"><?= htmlspecialchars($barcode['barcode_value']) ?></div>
+                <?php
+            } catch (Exception $e) {
+                error_log("Barcode generation error: " . $e->getMessage());
+                ?>
+                <div class="barcode-error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Barcode could not be generated</p>
+                    <p>Error: <?= htmlspecialchars($e->getMessage()) ?></p>
+                    <p>Ticket ID: <?= htmlspecialchars($barcode['barcode_value']) ?></p>
+                </div>
+                <?php
+            }
+            ?>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+
+<style>
+  /* Base styles for all screens */
+  .barcode-section {
+    margin: 15px 0;
+  }
+  
+  .barcode-container {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    background: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  }
+  
+  .barcode-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .barcode-header span:first-child {
+    font-weight: bold;
+    color: #0E386A;
+  }
+  
+  .scan-status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .scan-status.scanned {
+    background-color: #e6f7ee;
+    color: #28a745;
+  }
+  
+  .scan-status.unscanned {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+  
+  .barcode-image-container {
+    text-align: center;
+    margin: 15px 0;
+  }
+  
+  .barcode-img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+  
+  .barcode-number {
+    margin-top: 8px;
+    font-family: monospace;
+    font-size: 16px;
+    word-break: break-all;
+    text-align: center;
+  }
+  
+  .barcode-error {
+    padding: 15px;
+    background-color: #fff8f8;
+    border: 1px solid #ffdddd;
+    border-radius: 4px;
+    color: #d9534f;
+    text-align: center;
+  }
+  
+  .barcode-error i {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+  
+  .barcode-error p {
+    margin: 5px 0;
+  }
+
+  /* Mobile-specific styles (≤ 575px) */
+  @media (max-width: 575px) {
+    .barcode-container {
+      padding: 10px;
+      border-radius: 6px;
+    }
+    
+    .barcode-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    
+    .scan-status {
+      font-size: 12px;
+      padding: 3px 6px;
+    }
+    
+    .barcode-img {
+      /* Reduce height on mobile */
+      height: 40px;
+      width: auto;
+    }
+    
+    .barcode-number {
+      font-size: 14px;
+    }
+    
+    .barcode-error {
+      padding: 10px;
+    }
+    
+    .barcode-error i {
+      font-size: 20px;
+    }
+    
+    .barcode-error p {
+      font-size: 14px;
+    }
+  }
+</style>
+</div>
+          </div>
+
+          
+
+          <?php if ($ticket['status'] === 'completed'): ?>
+            <div class="ticket-footer">
               <?php if ($ticket['stars']): ?>
-                <div class="rating-section confirmed">
-                  <div class="rating-display">
-                    <div class="stars">
-                      <?php for ($i = 1; $i <= 5; $i++): ?>
-                        <i class="fas fa-star<?php echo $i > $ticket['stars'] ? '-half-alt' : ''; ?>"></i>
-                      <?php endfor; ?>
-                    </div>
-                    <?php if (!empty($ticket['comment'])): ?>
-                      <p class="rating-comment">"<?php echo htmlspecialchars($ticket['comment']); ?>"</p>
-                    <?php endif; ?>
+                <div class="rating-display">
+                  <div class="stars">
+                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                      <i class="fas fa-star<?php echo $i > $ticket['stars'] ? '-half-alt' : ''; ?>"></i>
+                    <?php endfor; ?>
                   </div>
-                  <p class="rating-notice"><i class="fas fa-lock"></i> Rating confirmed</p>
+                  <?php if (!empty($ticket['comment'])): ?>
+                    <div class="rating-comment">
+                      <i class="fas fa-quote-left"></i>
+                      <p><?php echo htmlspecialchars($ticket['comment']); ?></p>
+                    </div>
+                  <?php endif; ?>
+                  <span class="rating-notice">
+                    <i class="fas fa-check"></i> Rating submitted
+                  </span>
                 </div>
               <?php else: ?>
-                <div class="rating-section">
+                <div class="rating-form">
+                  <h4>Rate your experience</h4>
                   <form method="POST" action="customer-dashboard.php">
                     <input type="hidden" name="submit_rating" value="1">
                     <input type="hidden" name="ticket_id" value="<?php echo $ticket['id']; ?>">
-                    <h4>Rate your experience</h4>
                     <div class="star-rating">
                       <?php for ($i = 1; $i <= 5; $i++): ?>
                         <i class="far fa-star" data-rating="<?php echo $i; ?>"></i>
                       <?php endfor; ?>
                       <input type="hidden" name="stars" id="stars-input-<?php echo $ticket['id']; ?>" value="">
-                      <span class="rating-text">Select rating</span>
+                      <span class="rating-text">Tap to rate</span>
                     </div>
-                    <textarea class="rating-comment-input" name="comment" placeholder="Share your experience (optional)"></textarea>
-                    <button type="submit" class="btn confirm-rating">Confirm Rating</button>
+                    <div class="form-group">
+                      <textarea name="comment" placeholder="How was your trip? (Optional)" class="rating-comment-input"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Submit Rating</button>
                   </form>
                 </div>
               <?php endif; ?>
-            <?php endif; ?>
-          </div>
-        <?php endforeach; ?>
-      <?php endif; ?>
-    </div>
-  </section>
+            </div>
+          <?php endif; ?>
+        </div>
+      <?php endforeach; ?>
+    <?php endif; ?>
+  </div>
+</section>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Filter tickets
+  const filterButtons = document.querySelectorAll('.filter-btn');
+  const ticketCards = document.querySelectorAll('.ticket-card');
+  
+  filterButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const filter = this.dataset.filter;
+      
+      // Update active button
+      filterButtons.forEach(btn => btn.classList.remove('active'));
+      this.classList.add('active');
+      
+      // Filter tickets
+      ticketCards.forEach(card => {
+        if (filter === 'all' || card.dataset.status === filter) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  });
+  
+  // Search functionality
+  const searchInput = document.getElementById('ticket-search');
+  searchInput.addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    
+    ticketCards.forEach(card => {
+      const cardText = card.textContent.toLowerCase();
+      if (cardText.includes(searchTerm)) {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  });
+  
+  // Star rating functionality
+  document.querySelectorAll('.star-rating i').forEach(star => {
+    star.addEventListener('click', function() {
+      const rating = parseInt(this.getAttribute('data-rating'));
+      const container = this.closest('.star-rating');
+      const stars = container.querySelectorAll('i');
+      const text = container.querySelector('.rating-text');
+      const input = container.querySelector('input[type="hidden"]');
+      
+      stars.forEach((s, index) => {
+        s.classList.toggle('fas', index < rating);
+        s.classList.toggle('far', index >= rating);
+      });
+      
+      text.textContent = rating + (rating === 1 ? ' star' : ' stars');
+      input.value = rating;
+    });
+  });
+});
+</script>
 
   <div id="alertModal" class="alert-modal">
     <div class="alert-modal-content">

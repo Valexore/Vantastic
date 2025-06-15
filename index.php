@@ -170,7 +170,7 @@
         <h2>San ka punta?</h2>
         <div class="changing-text"></div>
         <div class="line"></div>
-        <p>"Miss mona ba? I-travel mo nalang yan!"</p>
+        <p>"Miss mo na ba? I-travel mo na lang yan!"</p>
 
         <!-- <p>"Sit back, relax and let your journey begins!"</p> -->
       </div>
@@ -194,7 +194,7 @@
       <div class="header-right">
         <!-- Login/Register Button -->
         <div class="menu-container">
-          <a href="#" class="login-register-btn"><i class="fa fa-user" aria-hidden="true"></i></a>
+          <a href="#" class="login-register-btn"><i class="fa fa-user" ></i></a>
           <nav id="nav-menu2" class="glass-effect">
             <div class="menu-header2">
               <span class="menu-title2">Account</span>
@@ -381,19 +381,11 @@
       <strong style="color: var(--teal);">Service:</strong> Friendly and professional drivers and staff
     </div>
   </li>
-  <li>
-    <div class="icon-container" style="background-color: rgba(0, 180, 180, 0.1);">
-      <i class="fa-solid fa-crown" style="color: var(--teal);"></i>
-    </div>
-    <div class="value-text">
-      <strong style="color: var(--teal);">Top Priority:</strong> To serve the Holy King himself
-    </div>
-  </li>
 </ul>
         </div>
       </div>
       
-      <div class="about-visual">
+      <div class="about-visual" >
         <div class="van-svg-container">
           <img src="svgs/vantis.svg" alt="iror" class="svgban">
         </div>
@@ -1079,6 +1071,354 @@
       </div>
     </section>
 
+
+
+
+
+
+
+
+
+
+<!-- User Guide Modal -->
+<div id="vantastic-guide" class="vantastic-modal-container" style="display: none;">
+  <div class="vantastic-modal-backdrop"></div>
+  <div class="vantastic-modal-dialog">
+    
+    <h2 class="vantastic-modal-title">Fast as just 3 Step!</h2>
+    
+    <div class="vantastic-feature-grid">
+      <div class="vantastic-feature-card">
+        <div class="vantastic-feature-icon">
+          <img src="svgs/lin.svg" alt="Book Ride" class="vantastic-icon-img" width="200" height="200">
+        </div>
+        <div class="vantastic-feature-desc">
+          <h3 class="vantastic-feature-heading">Step 1: Register</h3>
+          <p class="vantastic-feature-text"> Create your account in just 30 seconds with your email or phone number. 
+  No lengthy forms - we only need basic details to get you started!.</p>
+        </div>
+      </div>
+      
+      <div class="vantastic-feature-card">
+        <div class="vantastic-feature-icon">
+          <img src="svgs/rig.svg" alt="Check Schedules" class="vantastic-icon-img" width="200" height="200">
+        </div>
+        <div class="vantastic-feature-desc">
+          <h3 class="vantastic-feature-heading">Step 2: Login</h3>
+          <p class="vantastic-feature-text">Access your personalized dashboard with your secure credentials. 
+  Remember to verify your email for full account access.</p>
+        </div>
+      </div>
+      
+      <div class="vantastic-feature-card">
+        <div class="vantastic-feature-icon">
+          <img src="svgs/byt.svg" alt="Get Help" class="vantastic-icon-img" width="200" height="200">
+        </div>
+        <div class="vantastic-feature-desc">
+          <h3 class="vantastic-feature-heading">Step 3: Start Booking</h3>
+          <p class="vantastic-feature-text">Browse available routes, select your preferred time slot, and confirm your booking 
+  with just a few taps. Your ride will be waiting!</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="vantastic-modal-actions">
+      <div class="vantastic-modal-remember">
+        <input type="checkbox" id="vantastic-dont-show-again">
+        <label for="vantastic-dont-show-again">Don't show this again</label>
+      </div>
+      <button id="vantastic-confirm-btn" class="vantastic-primary-btn">Got it, let's go!</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Modal Container */
+  .vantastic-modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 1rem;
+    box-sizing: border-box;
+  }
+  
+  /* Modal Backdrop */
+  .vantastic-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: -1;
+  }
+  
+  /* Modal Dialog Box */
+  .vantastic-modal-dialog {
+    position: relative;
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    width: 100%;
+    max-width: 56.25rem;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 0.3125rem 1.875rem rgba(0,0,0,0.3);
+    text-align: center;
+  }
+  
+  /* Close Button */
+  .vantastic-modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.75rem;
+    font-weight: bold;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s;
+  }
+  
+  .vantastic-modal-close:hover {
+    color: #333;
+  }
+  
+  /* Title */
+  .vantastic-modal-title {
+    color: var(--vantastic-primary);
+    margin-bottom: 1.25rem;
+    font-size: 2rem;
+  }
+  
+  /* Features Grid */
+  .vantastic-feature-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.875rem;
+    margin: 1.875rem 0;
+  }
+  
+  /* Feature Card */
+  .vantastic-feature-card {
+    flex: 1 1 15.625rem;
+    max-width: 18.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  /* Feature Icon */
+  .vantastic-feature-icon {
+    width: 12.5rem;
+    height: 12.5rem;
+    background-color: rgba(0, 180, 180, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+    padding: 1.25rem;
+    box-sizing: border-box;
+    transition: transform 0.3s, background-color 0.3s;
+  }
+  
+  .vantastic-feature-card:hover .vantastic-feature-icon {
+    background-color: rgba(0, 180, 180, 0.2);
+    transform: scale(1.05);
+  }
+  
+  /* Icon Image */
+  .vantastic-icon-img {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    object-fit: contain;
+  }
+  
+  /* Feature Heading */
+  .vantastic-feature-heading {
+    color: var(--vantastic-primary);
+    margin-bottom: 0.9375rem;
+    font-size: 1.5rem;
+  }
+  
+  /* Feature Text */
+  .vantastic-feature-text {
+    color: #666;
+    line-height: 1.5;
+    font-size: 1.1rem;
+  }
+  
+  /* Modal Actions */
+  .vantastic-modal-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+  
+  /* Remember Option */
+  .vantastic-modal-remember {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #666;
+  }
+  
+  .vantastic-modal-remember input {
+    cursor: pointer;
+  }
+  
+  /* Primary Button */
+  .vantastic-primary-btn {
+    background-color: var(--teal);
+    color: white;
+    border: none;
+    padding: 0.9375rem 2.5rem;
+    border-radius: 3.125rem;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+  }
+  
+  .vantastic-primary-btn:hover {
+    background-color: #008080;
+    transform: translateY(-0.125rem);
+    box-shadow: 0 0.3125rem 0.9375rem rgba(0, 180, 180, 0.3);
+  }
+
+  /* No Scroll Class */
+  .vantastic-no-scroll {
+    overflow: hidden;
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 48rem) {
+    .vantastic-modal-dialog {
+      padding: 1.25rem;
+    }
+    
+    .vantastic-feature-icon {
+      width: 10rem;
+      height: 10rem;
+    }
+    
+    .vantastic-feature-card {
+      flex: 1 1 12.5rem;
+    }
+    
+    .vantastic-modal-title {
+      font-size: 1.8rem;
+    }
+    
+    .vantastic-feature-heading {
+      font-size: 1.3rem;
+    }
+    
+    .vantastic-feature-text {
+      font-size: 1rem;
+    }
+  }
+
+  @media (max-width: 30rem) {
+    .vantastic-feature-icon {
+      width: 8rem;
+      height: 8rem;
+    }
+    
+    .vantastic-modal-dialog {
+      padding: 1rem;
+    }
+    
+    .vantastic-primary-btn {
+      padding: 0.75rem 1.875rem;
+      font-size: 1rem;
+    }
+  }
+</style>
+
+<script>
+// VanTastic Guide Modal Functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const vantasticGuide = document.getElementById('vantastic-guide');
+  const vantasticConfirmBtn = document.getElementById('vantastic-confirm-btn');
+  const vantasticModalClose = document.querySelector('.vantastic-modal-close');
+  const vantasticDontShowAgain = document.getElementById('vantastic-dont-show-again');
+  
+  // Check if user has previously chosen "Don't show again"
+  if (!localStorage.getItem('vantasticGuideShown')) {
+    // Show modal after a short delay (.5 second)
+    setTimeout(() => {
+      vantasticGuide.style.display = 'flex';
+      document.body.classList.add('vantastic-no-scroll');
+    }, 500);
+  }
+  
+  // Close modal when clicking confirmation button
+  vantasticConfirmBtn.addEventListener('click', function() {
+    vantasticGuide.style.display = 'none';
+    document.body.classList.remove('vantastic-no-scroll');
+    
+    // If "Don't show again" is checked, store preference
+    if (vantasticDontShowAgain.checked) {
+      localStorage.setItem('vantasticGuideShown', 'true');
+    }
+  });
+  
+  // Close modal when clicking the X
+  vantasticModalClose.addEventListener('click', function() {
+    vantasticGuide.style.display = 'none';
+    document.body.classList.remove('vantastic-no-scroll');
+    
+    // If "Don't show again" is checked, store preference
+    if (vantasticDontShowAgain.checked) {
+      localStorage.setItem('vantasticGuideShown', 'true');
+    }
+  });
+  
+  // Close modal when clicking outside
+  vantasticGuide.addEventListener('click', function(e) {
+    if (e.target === vantasticGuide) {
+      vantasticGuide.style.display = 'none';
+      document.body.classList.remove('vantastic-no-scroll');
+      
+      // If "Don't show again" is checked, store preference
+      if (vantasticDontShowAgain.checked) {
+        localStorage.setItem('vantasticGuideShown', 'true');
+      }
+    }
+  });
+});
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     <!-- Login Modal -->
     <div id="login-modal" class="modal">
       <div class="modal-content">
@@ -1100,37 +1440,324 @@
       </div>
     </div>
 
-    <!-- Register Modal -->
-    <div id="register-modal" class="modal">
-      <div class="modal-content">
-        <span class="close-modal">&times;</span>
-        <h2>Register</h2>
-        <form id="register-form" method="post" action="register.php">
-          <input type="text" name="full_name" placeholder="Full Name" required>
-          <input type="email" name="email" placeholder="Email" required>
+<!-- Register Modal -->
+<div id="register-modal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal">&times;</span>
+    <h2>Register</h2>
+    <form id="register-form" method="post" action="register.php">
+      <input type="text" name="full_name" placeholder="Full Name" required>
+      <input type="email" name="email" placeholder="Email" required>
 
-          <div class="password-container">
-            <input type="password" id="register-password" name="password" placeholder="Password" required>
-            <span class="show-password" onclick="togglePassword('register-password', this)">
-              <i class="fas fa-eye-slash"></i>
-            </span>
-          </div>
-
-          <div class="password-container">
-            <input type="password" id="confirm-password" name="confirm_password" placeholder="Confirm Password" required>
-            <span class="show-password" onclick="togglePassword('confirm-password', this)">
-              <i class="fas fa-eye-slash"></i>
-            </span>
-          </div>
-
-          <button type="submit">Register <i class="fas fa-user-plus"></i></button>
-        </form>
-        <div class="modal-footer">
-        </div>
+      <div class="password-container">
+        <input type="password" id="register-password" name="password" placeholder="Password" required>
+        <span class="show-password" onclick="togglePassword('register-password', this)">
+          <i class="fas fa-eye-slash"></i>
+        </span>
       </div>
+
+      <div class="password-container">
+        <input type="password" id="confirm-password" name="confirm_password" placeholder="Confirm Password" required>
+        <span class="show-password" onclick="togglePassword('confirm-password', this)">
+          <i class="fas fa-eye-slash"></i>
+        </span>
+      </div>
+
+      <div class="security-question-container">
+        <p class="security-question-text">Security Question: Who is your first love?</p>
+        <input type="text" name="security_answer" placeholder="Your answer" required>
+        <small class="security-hint">This will be used to verify your identity if you get locked out.</small>
+      </div>
+
+      <button type="submit">Register <i class="fas fa-user-plus"></i></button>
+    </form>
+    <div class="modal-footer">
     </div>
+  </div>
+</div>
 
 
+
+<!-- Security Answer Modal -->
+<!-- Security Answer Modal -->
+<div id="security-answer-modal" class="modal vt-security-modal">
+  <div class="modal-content vt-security-content">
+    <span class="close-modal vt-security-close">&times;</span>
+    <h2>Account Locked</h2>
+    <p class="vt-security-email">Account: <span id="vt-display-email"></span></p>
+    <p class="vt-security-message">Please answer your security question to unlock your account.</p>
+    <form id="security-answer-form">
+      <p class="vt-security-question">Who is your first love?</p>
+      <input type="hidden" id="vt-locked-email">
+      <input type="text" id="vt-security-answer" placeholder="Your answer" required>
+      <button type="submit" class="vt-security-submit">Unlock Account</button>
+    </form>
+  </div>
+</div>
+
+<style>
+  /* Security Answer Modal Styles */
+.vt-security-modal {
+  display: none;
+  position: fixed;
+  z-index: 1001;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.7);
+}
+
+.vt-security-content {
+  background-color: #fefefe;
+  margin: 10% auto;
+  padding: 25px;
+  border-radius: 8px;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  border: 1px solid #0e386a;
+}
+
+.vt-security-close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.vt-security-close:hover,
+.vt-security-close:focus {
+  color: #0e386a;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.vt-security-message {
+  color: #722f37;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.vt-security-question {
+  font-weight: 600;
+  color: #0e386a;
+  margin-bottom: 10px;
+}
+
+#vt-security-answer {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.vt-security-submit {
+  width: 100%;
+  background-color: #0e386a;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.vt-security-submit:hover {
+  background-color: #4a90e2;
+}
+
+.security-question-container {
+  margin: 15px 0;
+}
+
+.security-question-text {
+  font-weight: 600;
+  color: #0e386a;
+  margin-bottom: 5px;
+}
+
+.security-hint {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-top: 5px;
+}
+
+/* Error message and unlock button styles */
+.vt-error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin: 15px 0;
+  border: 1px solid #f5c6cb;
+}
+
+.vt-error-message p {
+  margin: 0 0 10px 0;
+}
+
+.vt-unlock-now {
+  background-color: #0e386a;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.vt-unlock-now:hover {
+  background-color: #4a90e2;
+}
+
+/* Security email display */
+.vt-security-email {
+  font-weight: 500;
+  margin-bottom: 15px;
+  color: #0e386a;
+}
+
+#vt-display-email {
+  font-weight: 600;
+}
+</style>
+
+<script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Handle security answer form submission
+document.getElementById('security-answer-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const email = document.getElementById('vt-locked-email').value;
+  const answer = document.getElementById('vt-security-answer').value;
+  
+  fetch('login.php', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `email=${encodeURIComponent(email)}&security_answer=${encodeURIComponent(answer)}`
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert(data.message);
+      closeSecurityAnswerModal();
+      // Clear the password field and focus it for new login attempt
+      document.getElementById('login-password').value = '';
+      document.getElementById('login-password').focus();
+    } else {
+      alert(data.message);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('An error occurred. Please try again.');
+  });
+});// Handle security answer form submission
+document.getElementById('security-answer-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const email = document.getElementById('vt-locked-email').value;
+  const answer = document.getElementById('vt-security-answer').value;
+  
+  fetch('login.php', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `email=${encodeURIComponent(email)}&security_answer=${encodeURIComponent(answer)}`
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert(data.message);
+      closeSecurityAnswerModal();
+      // Clear the password field and focus it for new login attempt
+      document.getElementById('login-password').value = '';
+      document.getElementById('login-password').focus();
+    } else {
+      alert(data.message);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('An error occurred. Please try again.');
+  });
+});
+
+
+
+
+
+
+
+
+
+
+  // Handle security answer modal
+function showSecurityAnswerModal(email) {
+  const modal = document.getElementById('security-answer-modal');
+  document.getElementById('vt-locked-email').value = email;
+  document.getElementById('vt-display-email').textContent = email;
+  modal.style.display = 'block';
+}
+
+function closeSecurityAnswerModal() {
+  document.getElementById('security-answer-modal').style.display = 'none';
+}
+
+// Close modal when clicking X
+document.querySelector('.vt-security-close').addEventListener('click', closeSecurityAnswerModal);
+
+// Handle security answer form submission
+document.getElementById('security-answer-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const email = document.getElementById('vt-locked-email').value;
+  const answer = document.getElementById('vt-security-answer').value;
+  
+  fetch('login.php', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `email=${encodeURIComponent(email)}&security_answer=${encodeURIComponent(answer)}`
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert(data.message);
+      closeSecurityAnswerModal();
+      // Optionally, automatically submit the login form again
+    } else {
+      alert(data.message);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('An error occurred. Please try again.');
+  });
+});
+
+
+</script>
 
     <!-- Login Loading Modal -->
     <div id="loginloading" class="modal">
@@ -1222,6 +1849,7 @@
           transform: translateX(calc(var(--uib-size))) scale(0);
         }
       }
+
     </style>
 
 
@@ -1289,491 +1917,476 @@
 
 
 
-    <script>
-       // ==================== LOGIN LOADING ====================
-      document.getElementById('login-form')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        const form = this;
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalBtnText = submitBtn.innerHTML;
-        const loginLoadingModal = document.getElementById('loginloading');
-
-        // Show loading modal
-        loginLoadingModal.style.display = 'flex';
-
-        try {
-          const response = await fetch(form.action, {
-            method: 'POST',
-            body: new FormData(form),
-            headers: {
-              'Accept': 'application/json'
-            }
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            if (data.redirect) {
-              window.location.href = data.redirect;
-            } else {
-              window.location.href = 'customer-dashboard.php';
-            }
+<script>
+// ==================== ABOUT US COUNTER ANIMATION ====================
+document.addEventListener('DOMContentLoaded', function() {
+  const statNumbers = document.querySelectorAll('.stat-number');
+  
+  const options = {
+    threshold: 0.5
+  };
+  
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const statNumber = entry.target;
+        const target = parseInt(statNumber.getAttribute('data-count'));
+        const duration = 2000; // 2 seconds
+        const step = target / (duration / 16); // 60fps
+        
+        let current = 0;
+        const increment = () => {
+          current += step;
+          if (current < target) {
+            statNumber.textContent = Math.floor(current);
+            requestAnimationFrame(increment);
           } else {
-            // Close loading modal first
-            loginLoadingModal.style.display = 'none';
-            showErrorModal(data.message || 'Login failed. Please try again.');
+            statNumber.textContent = target;
           }
-        } catch (error) {
-          loginLoadingModal.style.display = 'none';
-          showErrorModal('Network error. Please try again.');
-          console.error('Login error:', error);
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = originalBtnText;
-        }
-      });
+        };
+        
+        increment();
+        observer.unobserve(statNumber);
+      }
+    });
+  }, options);
+  
+  statNumbers.forEach(stat => {
+    observer.observe(stat);
+  });
 
+  // ==================== MENU TOGGLE FUNCTIONALITY ====================
+  const loginRegisterBtn = document.querySelector('.login-register-btn');
+  const navMenu2 = document.getElementById('nav-menu2');
+  const mainMenuToggle = document.querySelector('.menu-toggle');
+  const navMenu = document.getElementById('nav-menu');
+  const body = document.body;
 
-      // ==================== ABOUT US ====================
-  document.addEventListener('DOMContentLoaded', function() {
-    const statNumbers = document.querySelectorAll('.stat-number');
-    
-    const options = {
-      threshold: 0.5
-    };
-    
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const statNumber = entry.target;
-          const target = parseInt(statNumber.getAttribute('data-count'));
-          const duration = 2000; // 2 seconds
-          const step = target / (duration / 16); // 60fps
-          
-          let current = 0;
-          const increment = () => {
-            current += step;
-            if (current < target) {
-              statNumber.textContent = Math.floor(current);
-              requestAnimationFrame(increment);
-            } else {
-              statNumber.textContent = target;
-            }
-          };
-          
-          increment();
-          observer.unobserve(statNumber);
-        }
-      });
-    }, options);
-    
-    statNumbers.forEach(stat => {
-      observer.observe(stat);
+  // Create overlay elements if they don't exist
+  const createOverlay = (className) => {
+    let overlay = document.querySelector(`.${className}`);
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = className;
+      document.body.appendChild(overlay);
+    }
+    return overlay;
+  };
+
+  const overlay = createOverlay('menu-overlay');
+  const overlay2 = createOverlay('menu-overlay2');
+
+  // Function to close all menus
+  const closeAllMenus = () => {
+    mainMenuToggle.classList.remove('active');
+    navMenu.classList.remove('active');
+    navMenu2.classList.remove('active');
+    overlay.classList.remove('active');
+    overlay2.classList.remove('active');
+    body.classList.remove('no-scroll');
+  };
+
+  // Main menu toggle
+  mainMenuToggle.addEventListener('click', function(e) {
+    e.stopPropagation();
+    this.classList.toggle('active');
+    navMenu.classList.toggle('active');
+    overlay.classList.toggle('active');
+    body.classList.toggle('no-scroll');
+
+    // Close account menu if open
+    if (navMenu2.classList.contains('active')) {
+      navMenu2.classList.remove('active');
+      overlay2.classList.remove('active');
+    }
+  });
+
+  // Account menu toggle
+  loginRegisterBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    navMenu2.classList.toggle('active');
+    overlay2.classList.toggle('active');
+    body.classList.toggle('no-scroll');
+
+    // Close main menu if open
+    if (navMenu.classList.contains('active')) {
+      navMenu.classList.remove('active');
+      overlay.classList.remove('active');
+      mainMenuToggle.classList.remove('active');
+    }
+  });
+
+  // Close menus when clicking on overlays
+  overlay.addEventListener('click', closeAllMenus);
+  overlay2.addEventListener('click', closeAllMenus);
+
+  // Close menus when clicking on links
+  document.querySelectorAll('#nav-menu a, #nav-menu2 a').forEach(link => {
+    link.addEventListener('click', function(e) {
+      if (!this.hasAttribute('data-modal')) {
+        closeAllMenus();
+      }
     });
   });
 
+  // ==================== MODAL FUNCTIONALITY ====================
+  const loginModal = document.getElementById('login-modal');
+  const registerModal = document.getElementById('register-modal');
+  const successModal = document.getElementById('success-modal');
+  const errorModal = document.getElementById('error-modal');
+  const closeModals = document.querySelectorAll('.close-modal');
+  const loginLoadingModal = document.getElementById('loginloading');
 
+  // Show modal function
+  const showModal = (modal) => {
+    closeAllMenus();
+    modal.style.display = 'flex';
+    body.classList.add('no-scroll');
+  };
 
+  // Close modal function
+  const closeModal = (modal) => {
+    modal.style.display = 'none';
+    body.classList.remove('no-scroll');
+  };
 
-      document.addEventListener('DOMContentLoaded', function() {
-        // ==================== MENU TOGGLE FUNCTIONALITY ====================
-        const loginRegisterBtn = document.querySelector('.login-register-btn');
-        const navMenu2 = document.getElementById('nav-menu2');
-        const mainMenuToggle = document.querySelector('.menu-toggle');
-        const navMenu = document.getElementById('nav-menu');
-        const body = document.body;
+  // Login link click handler
+  document.querySelector('.login-link').addEventListener('click', function(e) {
+    e.preventDefault();
+    showModal(loginModal);
+  });
 
-        // Create overlay elements if they don't exist
-        const createOverlay = (className) => {
-          let overlay = document.querySelector(`.${className}`);
-          if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.className = className;
-            document.body.appendChild(overlay);
-          }
-          return overlay;
-        };
+  // Register link click handler
+  document.querySelector('.register-link').addEventListener('click', function(e) {
+    e.preventDefault();
+    showModal(registerModal);
+  });
 
-        const overlay = createOverlay('menu-overlay');
-        const overlay2 = createOverlay('menu-overlay2');
+  // Close modals
+  closeModals.forEach(closeBtn => {
+    closeBtn.addEventListener('click', function() {
+      const modal = this.closest('.modal');
+      closeModal(modal);
+    });
+  });
 
-        // Function to close all menus
-        const closeAllMenus = () => {
-          mainMenuToggle.classList.remove('active');
-          navMenu.classList.remove('active');
-          navMenu2.classList.remove('active');
-          overlay.classList.remove('active');
-          overlay2.classList.remove('active');
-          body.classList.remove('no-scroll');
-        };
+  // Close modals when clicking outside
+  window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+      closeModal(e.target);
+    }
+  });
 
-        // Main menu toggle
-        mainMenuToggle.addEventListener('click', function(e) {
-          e.stopPropagation();
-          this.classList.toggle('active');
-          navMenu.classList.toggle('active');
-          overlay.classList.toggle('active');
-          body.classList.toggle('no-scroll');
+// ==================== FORM HANDLING ====================
+// Login form submission with loading animation
+document.getElementById('login-form')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
 
-          // Close account menu if open
-          if (navMenu2.classList.contains('active')) {
-            navMenu2.classList.remove('active');
-            overlay2.classList.remove('active');
-          }
-        });
+  const form = this;
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const email = form.querySelector('input[name="email"]').value;
+  
+  // Check if already submitting
+  if (submitBtn.hasAttribute('data-submitting')) {
+    return;
+  }
+  
+  // Set submitting state
+  submitBtn.setAttribute('data-submitting', 'true');
+  submitBtn.disabled = true;
+  const originalBtnText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+  
+  // Show loading modal if available
+  if (typeof loginLoadingModal !== 'undefined' && loginLoadingModal) {
+    loginLoadingModal.style.display = 'flex';
+  }
 
-        // Account menu toggle
-        loginRegisterBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          navMenu2.classList.toggle('active');
-          overlay2.classList.toggle('active');
-          body.classList.toggle('no-scroll');
-
-          // Close main menu if open
-          if (navMenu.classList.contains('active')) {
-            navMenu.classList.remove('active');
-            overlay.classList.remove('active');
-            mainMenuToggle.classList.remove('active');
-          }
-        });
-
-        // Close menus when clicking on overlays
-        overlay.addEventListener('click', closeAllMenus);
-        overlay2.addEventListener('click', closeAllMenus);
-
-        // Close menus when clicking on links
-        document.querySelectorAll('#nav-menu a, #nav-menu2 a').forEach(link => {
-          link.addEventListener('click', function(e) {
-            if (!this.hasAttribute('data-modal')) {
-              closeAllMenus();
-            }
-          });
-        });
-
-        // ==================== MODAL FUNCTIONALITY ====================
-        const loginModal = document.getElementById('login-modal');
-        const registerModal = document.getElementById('register-modal');
-        const successModal = document.getElementById('success-modal');
-        const errorModal = document.getElementById('error-modal');
-        const closeModals = document.querySelectorAll('.close-modal');
-
-        // Show modal function
-        const showModal = (modal) => {
-          closeAllMenus();
-          modal.style.display = 'flex';
-          body.classList.add('no-scroll');
-        };
-
-        // Close modal function
-        const closeModal = (modal) => {
-          modal.style.display = 'none';
-          body.classList.remove('no-scroll');
-        };
-
-        // Login link click handler
-        document.querySelector('.login-link').addEventListener('click', function(e) {
-          e.preventDefault();
-          showModal(loginModal);
-        });
-
-        // Register link click handler
-        document.querySelector('.register-link').addEventListener('click', function(e) {
-          e.preventDefault();
-          showModal(registerModal);
-        });
-
-        // Close modals
-        closeModals.forEach(closeBtn => {
-          closeBtn.addEventListener('click', function() {
-            const modal = this.closest('.modal');
-            closeModal(modal);
-          });
-        });
-
-        // Close modals when clicking outside
-        window.addEventListener('click', (e) => {
-          if (e.target.classList.contains('modal')) {
-            closeModal(e.target);
-          }
-        });
-
-
-
-        // ==================== FORM HANDLING ====================
-        // Password toggle functionality
-        // Login form submission
-        document.getElementById('login-form')?.addEventListener('submit', async function(e) {
-          e.preventDefault();
-
-          const form = this;
-          const submitBtn = form.querySelector('button[type="submit"]');
-          const originalBtnText = submitBtn.innerHTML;
-
-          // Show loading state
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
-
-          try {
-            const response = await fetch(form.action, {
-              method: 'POST',
-              body: new FormData(form),
-              headers: {
-                'Accept': 'application/json'
-              }
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-              if (data.redirect) {
-                window.location.href = data.redirect;
-              } else {
-                window.location.href = 'customer-dashboard.php';
-              }
-            } else {
-              showErrorModal(data.message || 'Login failed. Please try again.');
-            }
-          } catch (error) {
-            showErrorModal('Network error. Please try again.');
-            console.error('Login error:', error);
-          } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnText;
-          }
-        });
-
-        // Register form submission
-        document.getElementById('register-form')?.addEventListener('submit', async function(e) {
-          e.preventDefault();
-
-          // Client-side validation
-          const password = document.getElementById('register-password').value;
-          const confirmPassword = document.getElementById('confirm-password').value;
-
-          if (password.length < 8) {
-            showErrorModal('Password must be at least 8 characters long');
-            return;
-          }
-
-          if (password !== confirmPassword) {
-            showErrorModal('Passwords do not match');
-            return;
-          }
-
-          const form = this;
-          const submitBtn = form.querySelector('button[type="submit"]');
-          const originalBtnText = submitBtn.innerHTML;
-
-          // Show loading state
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
-
-          try {
-            const response = await fetch(form.action, {
-              method: 'POST',
-              body: new FormData(form)
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-              showSuccessModal(data.message || 'Registration successful! Please check your email to verify your account.');
-              form.reset();
-            } else {
-              showErrorModal(data.message || 'Registration failed. Please try again.');
-            }
-          } catch (error) {
-            showErrorModal('Network error. Please try again.');
-            console.error('Registration error:', error);
-          } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnText;
-          }
-        });
-
-        // Show success modal function
-        function showSuccessModal(message) {
-          const successModal = document.getElementById('success-modal');
-          const loadingBar = successModal.querySelector('.loading-bar');
-          const checkmark = successModal.querySelector('.checkmark');
-
-          successModal.style.display = 'flex';
-          checkmark.style.display = 'none';
-          loadingBar.style.display = 'block';
-
-          setTimeout(() => {
-            loadingBar.style.display = 'none';
-            checkmark.style.display = 'block';
-            document.getElementById('success-message').textContent = message;
-          }, 2000);
-        }
-
-        // Show error modal function
-        function showErrorModal(message) {
-          const errorModal = document.getElementById('error-modal');
-          document.getElementById('error-message').textContent = message;
-          errorModal.style.display = 'flex';
-        }
-
-        // Close success modal
-        document.getElementById('success-close-btn')?.addEventListener('click', function() {
-          closeModal(successModal);
-        });
-
-        // Close error modal
-        document.getElementById('error-close-btn')?.addEventListener('click', function() {
-          closeModal(errorModal);
-        });
-
-        // ==================== SCROLL BEHAVIOR ====================
-        // Close menus when scrolling
-        window.addEventListener('scroll', function() {
-          if (window.scrollY > 50) {
-            closeAllMenus();
-          }
-        });
-      });
-    </script>
-
-    <script>
-       // ==================== VIDIO AT HERO ====================
-      document.addEventListener('DOMContentLoaded', function() {
-        // Initialize all videos to be ready for hover
-        const scenicItems = document.querySelectorAll('.scenic-item');
-
-        scenicItems.forEach(item => {
-          const video = item.querySelector('.scenic-video');
-
-          // Preload video metadata
-          video.load();
-
-          item.addEventListener('mouseenter', function() {
-            video.currentTime = 0;
-            video.play().catch(e => console.log("Video play prevented:", e));
-          });
-
-          item.addEventListener('mouseleave', function() {
-            video.pause();
-          });
-        });
-
-        // Duplicate items for infinite loop effect
-        const scenicList = document.querySelector('.scenic-list');
-        const items = scenicList.querySelectorAll('.scenic-item');
-
-        items.forEach(item => {
-          const clone = item.cloneNode(true);
-          scenicList.appendChild(clone);
-        });
-      });
-    </script>
-
-
-    <script>
-       // ==================== LOGIN FORM HANDLER ====================
-      document.getElementById('login-form').addEventListener('submit', function(e) {
-        e.preventDefault(); // Prevent normal submission
-
-        fetch('login.php', {
-            method: 'POST',
-            body: new FormData(this),
-            headers: {
-              'Accept': 'application/json' // Explicitly request JSON response
-            }
-          })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
-            }
-            return response.json(); // Parse the JSON response
-          })
-          .then(data => {
-            if (data.success) {
-              // Login successful - redirect or handle accordingly
-              if (data.redirect) {
-                window.location.href = data.redirect;
-              } else {
-                // Default redirect if none specified
-                window.location.href = 'customer-dashboard.php';
-              }
-            } else {
-              // Show error message from server
-              alert(data.message);
-
-              // If it's a verification error, show resend link
-              if (data.message.includes('verify your email')) {
-                const resendLink = document.createElement('div');
-                resendLink.innerHTML = data.message;
-                document.querySelector('#login-form').appendChild(resendLink);
-              }
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            alert("Login failed. Please try again.");
-          });
-      });
-
-
-      // Function to show error modal
-      function showErrorModal(message) {
-        const errorModal = document.getElementById('error-modal');
-        const errorMessage = document.getElementById('error-message');
-
-        errorMessage.textContent = message;
-        errorModal.style.display = 'flex';
+  try {
+    const formData = new FormData(form);
+    const response = await fetch(form.action, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
       }
+    });
 
-      // Close error modal
-      document.getElementById('error-close-btn').addEventListener('click', function() {
-        document.getElementById('error-modal').style.display = 'none';
-      });
+    const data = await response.json();
 
-      // Close when clicking outside modal
-      window.addEventListener('click', function(event) {
-        const errorModal = document.getElementById('error-modal');
-        if (event.target === errorModal) {
-          errorModal.style.display = 'none';
-        }
-      });
-
-
-
-      // Function to show success modal (from previous implementation)
-      function showSuccessModal(message) {
-        const successModal = document.getElementById('success-modal');
-        const loadingBar = successModal.querySelector('.loading-bar');
-        const checkmark = successModal.querySelector('.checkmark');
-
-        successModal.style.display = 'flex';
-        checkmark.style.display = 'none';
-        loadingBar.style.display = 'block';
-
-        setTimeout(() => {
-          loadingBar.style.display = 'none';
-          checkmark.style.display = 'block';
-          document.getElementById('success-message').textContent = message;
-        }, 2000);
+    if (data.needs_security_answer) {
+      // Create a div for the error message with unlock button
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'vt-error-message';
+      errorDiv.innerHTML = `
+        <p>${data.message}</p>
+        <button class="vt-unlock-now" 
+                data-email="${data.locked_email || email}">Unlock Now</button>
+      `;
+      
+      // Insert the error message near the login form
+      const loginForm = document.getElementById('login-form');
+      const existingError = loginForm.querySelector('.vt-error-message');
+      if (existingError) {
+        existingError.replaceWith(errorDiv);
+      } else {
+        loginForm.appendChild(errorDiv);
       }
+      
+      // Add event listener to the unlock button
+      errorDiv.querySelector('.vt-unlock-now').addEventListener('click', function() {
+        showSecurityAnswerModal(this.getAttribute('data-email'));
+      });
+      
+      // Also show the security answer modal directly
+      showSecurityAnswerModal(data.locked_email || email);
+    } 
+    else if (data.success) {
+      window.location.href = data.redirect || 'customer-dashboard.php';
+    } 
+    else {
+      // Show error in modal if available, otherwise use alert
+      if (typeof showErrorModal !== 'undefined') {
+        showErrorModal(data.message || 'Login failed. Please try again.');
+      } else {
+        alert(data.message || 'Login failed. Please try again.');
+      }
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    if (typeof showErrorModal !== 'undefined') {
+      showErrorModal('Network error. Please try again.');
+    } else {
+      alert('Network error. Please try again.');
+    }
+  } finally {
+    // Hide loading modal if available
+    if (typeof loginLoadingModal !== 'undefined' && loginLoadingModal) {
+      loginLoadingModal.style.display = 'none';
+    }
+    
+    // Reset button state after a minimum delay (1 second)
+    setTimeout(() => {
+      submitBtn.removeAttribute('data-submitting');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnText;
+    }, 1000);
+  }
+});
 
-      // Close success modal
-      document.getElementById('success-close-btn').addEventListener('click', function() {
-        document.getElementById('success-modal').style.display = 'none';
+// Security answer modal handling
+function showSecurityAnswerModal(email) {
+  const modal = document.getElementById('security-answer-modal');
+  if (!modal) return;
+  
+  document.getElementById('vt-locked-email').value = email;
+  document.getElementById('vt-display-email').textContent = email;
+  modal.style.display = 'block';
+  
+  // Focus on answer field when modal opens
+  setTimeout(() => {
+    const answerField = document.getElementById('vt-security-answer');
+    if (answerField) answerField.focus();
+  }, 100);
+}
+
+function closeSecurityAnswerModal() {
+  const modal = document.getElementById('security-answer-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+// Close modal when clicking X
+document.querySelector('.vt-security-close')?.addEventListener('click', closeSecurityAnswerModal);
+
+// Handle security answer form submission
+document.getElementById('security-answer-form')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const email = document.getElementById('vt-locked-email').value;
+  const answer = document.getElementById('vt-security-answer').value;
+  const submitBtn = this.querySelector('button[type="submit"]');
+  
+  // Set submitting state
+  submitBtn.disabled = true;
+  const originalBtnText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+  
+  try {
+    const response = await fetch('login.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `email=${encodeURIComponent(email)}&security_answer=${encodeURIComponent(answer)}`
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      if (typeof showSuccessModal !== 'undefined') {
+        showSuccessModal(data.message || 'Account unlocked successfully!');
+      } else {
+        alert(data.message || 'Account unlocked successfully!');
+      }
+      
+      closeSecurityAnswerModal();
+      
+      // Clear the password field and focus it for new login attempt
+      const passwordField = document.getElementById('login-password');
+      if (passwordField) {
+        passwordField.value = '';
+        passwordField.focus();
+      }
+      
+      // Remove any existing error messages
+      const errorDiv = document.querySelector('.vt-error-message');
+      if (errorDiv) errorDiv.remove();
+    } 
+    else {
+      if (typeof showErrorModal !== 'undefined') {
+        showErrorModal(data.message || 'Incorrect security answer');
+      } else {
+        alert(data.message || 'Incorrect security answer');
+      }
+    }
+  } 
+  catch (error) {
+    console.error('Error:', error);
+    if (typeof showErrorModal !== 'undefined') {
+      showErrorModal('An error occurred. Please try again.');
+    } else {
+      alert('An error occurred. Please try again.');
+    }
+  } 
+  finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalBtnText;
+  }
+});
+
+
+  // Register form submission
+  document.getElementById('register-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    // Client-side validation
+    const password = document.getElementById('register-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+
+    if (password.length < 8) {
+      showErrorModal('Password must be at least 8 characters long');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showErrorModal('Passwords do not match');
+      return;
+    }
+
+    const form = this;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
+
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form)
       });
 
-      // Close when clicking outside modal
-      window.addEventListener('click', function(event) {
-        const successModal = document.getElementById('success-modal');
-        if (event.target === successModal) {
-          successModal.style.display = 'none';
-        }
-      });
+      const data = await response.json();
 
+      if (data.success) {
+        showSuccessModal(data.message || 'Registration successful! Please check your email to verify your account.');
+        form.reset();
+      } else {
+        showErrorModal(data.message || 'Registration failed. Please try again.');
+      }
+    } catch (error) {
+      showErrorModal('Network error. Please try again.');
+      console.error('Registration error:', error);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnText;
+    }
+  });
 
+  // Show success modal function
+  function showSuccessModal(message) {
+    const successModal = document.getElementById('success-modal');
+    const loadingBar = successModal.querySelector('.loading-bar');
+    const checkmark = successModal.querySelector('.checkmark');
 
-      // Show/Hide Password Function
+    successModal.style.display = 'flex';
+    checkmark.style.display = 'none';
+    loadingBar.style.display = 'block';
+
+    setTimeout(() => {
+      loadingBar.style.display = 'none';
+      checkmark.style.display = 'block';
+      document.getElementById('success-message').textContent = message;
+    }, 2000);
+  }
+
+  // Show error modal function
+  function showErrorModal(message) {
+    const errorModal = document.getElementById('error-modal');
+    document.getElementById('error-message').textContent = message;
+    errorModal.style.display = 'flex';
+  }
+
+  // Close success modal
+  document.getElementById('success-close-btn')?.addEventListener('click', function() {
+    closeModal(successModal);
+  });
+
+  // Close error modal
+  document.getElementById('error-close-btn')?.addEventListener('click', function() {
+    closeModal(errorModal);
+  });
+
+  // ==================== SCROLL BEHAVIOR ====================
+  // Close menus when scrolling
+  window.addEventListener('scroll', function() {
+    if (window.scrollY > 50) {
+      closeAllMenus();
+    }
+  });
+
+  // ==================== VIDEO AT HERO ====================
+  // Initialize all videos to be ready for hover
+  const scenicItems = document.querySelectorAll('.scenic-item');
+
+  scenicItems.forEach(item => {
+    const video = item.querySelector('.scenic-video');
+
+    // Preload video metadata
+    video.load();
+
+    item.addEventListener('mouseenter', function() {
+      video.currentTime = 0;
+      video.play().catch(e => console.log("Video play prevented:", e));
+    });
+
+    item.addEventListener('mouseleave', function() {
+      video.pause();
+    });
+  });
+
+  // Duplicate items for infinite loop effect
+  const scenicList = document.querySelector('.scenic-list');
+  const items = scenicList.querySelectorAll('.scenic-item');
+
+  items.forEach(item => {
+    const clone = item.cloneNode(true);
+    scenicList.appendChild(clone);
+  });
+});
+// Show/Hide Password Function
       function togglePassword(inputId, element) {
         const passwordInput = document.getElementById(inputId);
         const icon = element ? element.querySelector("i") : passwordInput.nextElementSibling.querySelector("i");
@@ -1788,7 +2401,7 @@
           icon.classList.remove("fa-eye");
         }
       }
-    </script>
+</script>
 
 
   </body>

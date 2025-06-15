@@ -10,6 +10,18 @@ if (!$conn) {
 
 
 
+
+// Function to generate a unique barcode
+function generateBarcode($ticket_id) {
+    // Generate a unique barcode value (you can use any barcode format you prefer)
+    $prefix = 'VT'; // VanTastic prefix
+    $unique_id = uniqid();
+    $hash = substr(md5($ticket_id . $unique_id), 0, 8);
+    return $prefix . strtoupper($hash);
+}
+
+
+
 // Set charset to avoid encoding issues
 mysqli_set_charset($conn, 'utf8mb4');
 

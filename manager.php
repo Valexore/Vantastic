@@ -1034,6 +1034,7 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
         <li><a href="#dashboardv2" class="active" data-section="dashboardv2"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
 
         <li><a href="#dashboard" class="active" data-section="dashboard"><i class="fas fa-ticket"></i> Tickets</a></li>
+        <li><a href="#tickets-pd" data-section="tickets-pd"><i class="fas fa-barcode"></i> Ticket Barcodes</a></li>
         <li><a href="#van-management" data-section="van-management"><i class="fas fa-van-shuttle"></i> Van Management</a></li>
         <li><a href="#destination-management" data-section="destination-management"><i class="fas fa-map-marked-alt"></i> Destinations</a></li>
         <li><a href="#reports" data-section="reports"><i class="fas fa-chart-line"></i> Reports</a></li>
@@ -1487,6 +1488,220 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
  /////////////////////////////////////////////////////////////////////////////////////////////////////////////
  /////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+
+<!-- Tickets PD Section -->
+<section id="tickets-pd" class="dashboard-section">
+    <div class="dashboard-header">
+        <h2>Ticket Barcode Management</h2>
+        <div class="filter-controls">
+            <div class="search-bar">
+                <input type="text" id="barcode-search" placeholder="Search barcodes...">
+                <button id="search-barcodes"><i class="fas fa-search"></i></button>
+            </div>
+            <div class="filter-group">
+                <label for="scan-status-filter">Scan Status:</label>
+                <select id="scan-status-filter">
+                    <option value="all">All Statuses</option>
+                    <option value="scanned">Scanned</option>
+                    <option value="unscanned">Unscanned</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" id="reset-barcode-filters">
+                <i class="fas fa-sync-alt"></i> Reset
+            </button>
+        </div>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>Total Barcodes</h3>
+            <div class="value">
+                <?php 
+                $totalBarcodesQuery = "SELECT COUNT(*) as total FROM ticket_barcodes";
+                $totalBarcodesResult = mysqli_query($conn, $totalBarcodesQuery);
+                $totalBarcodes = mysqli_fetch_assoc($totalBarcodesResult);
+                echo number_format($totalBarcodes['total'] ?? 0);
+                ?>
+            </div>
+        </div>
+        <div class="stat-card">
+            <h3>Scanned</h3>
+            <div class="value">
+                <?php 
+                $scannedBarcodesQuery = "SELECT COUNT(*) as scanned FROM ticket_barcodes WHERE scan_status = 'scanned'";
+                $scannedBarcodesResult = mysqli_query($conn, $scannedBarcodesQuery);
+                $scannedBarcodes = mysqli_fetch_assoc($scannedBarcodesResult);
+                echo number_format($scannedBarcodes['scanned'] ?? 0);
+                ?>
+            </div>
+        </div>
+        <div class="stat-card">
+            <h3>Unscanned</h3>
+            <div class="value">
+                <?php 
+                $unscannedBarcodesQuery = "SELECT COUNT(*) as unscanned FROM ticket_barcodes WHERE scan_status = 'unscanned'";
+                $unscannedBarcodesResult = mysqli_query($conn, $unscannedBarcodesQuery);
+                $unscannedBarcodes = mysqli_fetch_assoc($unscannedBarcodesResult);
+                echo number_format($unscannedBarcodes['unscanned'] ?? 0);
+                ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Barcode ID</th>
+                    <th>Ticket ID</th>
+                    <th>Barcode Value</th>
+                    <th>Scan Status</th>
+                    <th>Scan Time</th>
+                    <th>Scanned By</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                // Handle barcode filtering
+                $barcode_filter_where = "";
+                $barcode_filter_params = [];
+                $barcode_filter_types = "";
+
+                if (isset($_GET['filter_barcodes'])) {
+                    if (isset($_GET['scan_status']) && $_GET['scan_status'] != 'all') {
+                        $barcode_filter_where .= " AND scan_status = ?";
+                        $barcode_filter_params[] = $_GET['scan_status'];
+                        $barcode_filter_types .= 's';
+                    }
+
+                    if (isset($_GET['search']) && !empty($_GET['search'])) {
+                        $search = "%" . $_GET['search'] . "%";
+                        $barcode_filter_where .= " AND (barcode_value LIKE ? OR ticket_id LIKE ?)";
+                        $barcode_filter_params[] = $search;
+                        $barcode_filter_params[] = $search;
+                        $barcode_filter_types .= 'ss';
+                    }
+                }
+
+                // Get all barcodes
+                $barcodes_query = "SELECT tb.*, u.full_name as scanned_by_name 
+                                 FROM ticket_barcodes tb
+                                 LEFT JOIN users u ON tb.scanned_by = u.id
+                                 WHERE 1=1 $barcode_filter_where
+                                 ORDER BY tb.id DESC";
+
+                if (!empty($barcode_filter_params)) {
+                    $stmt = mysqli_prepare($conn, $barcodes_query);
+                    mysqli_stmt_bind_param($stmt, $barcode_filter_types, ...$barcode_filter_params);
+                    mysqli_stmt_execute($stmt);
+                    $barcodes_result = mysqli_stmt_get_result($stmt);
+                } else {
+                    $barcodes_result = mysqli_query($conn, $barcodes_query);
+                }
+
+                if ($barcodes_result && mysqli_num_rows($barcodes_result) > 0) {
+                    while ($barcode = mysqli_fetch_assoc($barcodes_result)) {
+                        echo '<tr>';
+                        echo '<td>' . $barcode['id'] . '</td>';
+                        echo '<td>VT' . str_pad($barcode['ticket_id'], 4, '0', STR_PAD_LEFT) . '</td>';
+                        echo '<td>' . htmlspecialchars($barcode['barcode_value']) . '</td>';
+                        echo '<td><span class="status-badge status-' . $barcode['scan_status'] . '">' . 
+                             ucfirst($barcode['scan_status']) . '</span></td>';
+                        echo '<td>' . ($barcode['scan_time'] ? date('M j, Y H:i', strtotime($barcode['scan_time'])) : '-') . '</td>';
+                        echo '<td>' . ($barcode['scanned_by_name'] ? htmlspecialchars($barcode['scanned_by_name']) : '-') . '</td>';
+                        echo '</tr>';
+                    }
+                } else {
+                    echo '<tr><td colspan="6">No barcode records found</td></tr>';
+                }
+                ?>
+            </tbody>
+        </table>
+    </div>
+
+
+    <style>
+
+      /* Barcode Status Badges */
+.status-badge.status-scanned {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-badge.status-unscanned {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Barcode Table Styles */
+#tickets-pd table td:nth-child(3) {
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+#tickets-pd table td:nth-child(4) {
+    text-align: center;
+}
+    </style>
+
+
+
+    <script>
+// Add to your existing JavaScript
+function initBarcodeFilters() {
+    const barcodeSearch = document.getElementById('barcode-search');
+    const scanStatusFilter = document.getElementById('scan-status-filter');
+    const resetFiltersBtn = document.getElementById('reset-barcode-filters');
+
+    barcodeSearch.addEventListener('input', debounce(filterBarcodes, 300));
+    scanStatusFilter.addEventListener('change', filterBarcodes);
+    resetFiltersBtn.addEventListener('click', resetBarcodeFilters);
+}
+
+function filterBarcodes() {
+    const searchTerm = document.getElementById('barcode-search').value;
+    const scanStatusFilter = document.getElementById('scan-status-filter').value;
+
+    const params = new URLSearchParams();
+    if (searchTerm) params.append('search', searchTerm);
+    if (scanStatusFilter !== 'all') params.append('scan_status', scanStatusFilter);
+    params.append('filter_barcodes', '1');
+
+    fetch(`manager.php?${params.toString()}`)
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTable = doc.querySelector('#tickets-pd tbody');
+            if (newTable) {
+                document.querySelector('#tickets-pd tbody').innerHTML = newTable.innerHTML;
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function resetBarcodeFilters() {
+    document.getElementById('barcode-search').value = '';
+    document.getElementById('scan-status-filter').value = 'all';
+    filterBarcodes();
+}
+
+// Add initBarcodeFilters to your DOMContentLoaded event listener
+document.addEventListener('DOMContentLoaded', function() {
+    // ... existing code ...
+    initBarcodeFilters();
+});
+    </script>
+
+</section>
+ 
+      <!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+
+ 
 
       <!-- Van Management Section -->
       <section id="van-management" class="dashboard-section">
@@ -1986,6 +2201,15 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
           <h2>System Settings</h2>
         </div>
 
+        <div class="settings-group">
+    <h3>Quick Actions</h3>
+    <div class="form-group">
+        <a href="scanner.php" class="btn btn-primary" style="display: inline-block; margin-top: 10px;">
+            <i class="fas fa-qrcode"></i> Open Ticket Scanner
+        </a>
+    </div>
+</div>
+
         <form method="post" id="settings-form">
           <div class="settings-group">
             <h3>Company Information</h3>
@@ -2037,6 +2261,8 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
               </div>
             </div>
           </div>
+
+          
 
           <div class="form-footer">
             <button type="submit" class="btn btn-primary" name="update_settings">

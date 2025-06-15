@@ -454,36 +454,42 @@ while ($row = mysqli_fetch_assoc($destinations_result)) {
         <div class="data-table">
           <table id="users-table">
             <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Created At</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php foreach ($users as $user): ?>
-              <tr data-user-id="<?php echo $user['id']; ?>">
-                <td><?php echo $user['id']; ?></td>
-                <td><?php echo htmlspecialchars($user['full_name']); ?></td>
-                <td><?php echo htmlspecialchars($user['email']); ?></td>
-                <td><?php echo ucfirst($user['role']); ?></td>
-                <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
-                <td>
-                  <div class="action-buttons">
-                    <button class="btn btn-secondary btn-sm edit-user-btn">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-danger btn-sm delete-user-btn">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <?php endforeach; ?>
-            </tbody>
+  <tr>
+    <th>ID</th>
+    <th>Name</th>
+    <th>Email</th>
+    <th>Role</th>
+    <th>Last Login</th>
+    <th>Login Attempts</th>
+    <th>Lockout Until</th>
+    <th>Created At</th>
+    <th>Actions</th>
+  </tr>
+</thead>
+<tbody>
+  <?php foreach ($users as $user): ?>
+  <tr data-user-id="<?php echo $user['id']; ?>">
+    <td><?php echo $user['id']; ?></td>
+    <td><?php echo htmlspecialchars($user['full_name']); ?></td>
+    <td><?php echo htmlspecialchars($user['email']); ?></td>
+    <td><?php echo ucfirst($user['role']); ?></td>
+    <td><?php echo $user['last_login_session'] ? date('M d, Y H:i', strtotime($user['last_login_session'])) : 'Never'; ?></td>
+    <td><?php echo $user['login_attempts']; ?></td>
+    <td><?php echo $user['login_lockout'] ? date('M d, Y H:i', strtotime($user['login_lockout'])) : 'Not locked'; ?></td>
+    <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
+    <td>
+      <div class="action-buttons">
+        <button class="btn btn-secondary btn-sm edit-user-btn">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn btn-danger btn-sm delete-user-btn">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </td>
+  </tr>
+  <?php endforeach; ?>
+</tbody>
           </table>
         </div>
       </section>

@@ -12,7 +12,11 @@ CREATE TABLE `users` (
   `reset_token_expiry` datetime DEFAULT NULL,
   `is_verified` tinyint(1) NOT NULL DEFAULT 0,
   `verification_token` varchar(255) DEFAULT NULL,
-  `verification_token_expiry` datetime DEFAULT NULL
+  `verification_token_expiry` datetime DEFAULT NULL,
+  `last_login_session` datetime DEFAULT NULL,
+  `login_attempts` int(11) DEFAULT 0,
+  `login_lockout` datetime DEFAULT NULL,
+  `security_answer` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Terminals table
