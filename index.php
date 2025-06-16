@@ -1629,17 +1629,6 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 
 
-
-
-
-
-
-
-
-
-
-
-
 // Handle security answer form submission
 document.getElementById('security-answer-form').addEventListener('submit', function(e) {
   e.preventDefault();
@@ -1755,7 +1744,6 @@ document.getElementById('security-answer-form').addEventListener('submit', funct
     alert('An error occurred. Please try again.');
   });
 });
-
 
 </script>
 

@@ -57,9 +57,9 @@ if (isset($_GET['logout'])) {
 //   | $$     | $$  | $$    $$| $$\  $$ | $$         | $$         | $$        | $$  | $$      
 //   | $$    /$$$$$$|  $$$$$$/| $$ \  $$| $$$$$$$$   | $$         | $$       /$$$$$$| $$$$$$$$
 //   |__/   |______/ \______/ |__/  \__/|________/   |__/         |__/      |______/|________/
-                                                                                            
-                                                                                            
-                                                                                                                                                                       
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Handle ticket filtering
@@ -252,15 +252,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_status'])) {
 //   | $$     | $$  | $$    $$| $$\  $$ | $$         | $$         | $$  | $$| $$      | $$      
 //  | $$    /$$$$$$|  $$$$$$/| $$ \  $$| $$$$$$$$   | $$         | $$$$$$$/| $$$$$$$$| $$$$$$$$
 //   |__/   |______/ \______/ |__/  \__/|________/   |__/         |_______/ |________/|________/
-                                                                                              
-                                                                                              
-                                                                                              
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 // Handle ticket deletion
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_ticket'])) {
+// Handle ticket deletion (single or multiple)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['delete_ticket']) || isset($_POST['delete_tickets']))) {
   // Verify CSRF token
   if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
     $_SESSION['error_message'] = "Invalid CSRF token";
@@ -268,29 +269,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_ticket'])) {
     exit();
   }
 
-  $ticket_id = (int)$_POST['ticket_id'];
+  $ticket_ids = [];
+  if (isset($_POST['delete_ticket'])) {
+    $ticket_ids[] = (int)$_POST['ticket_id'];
+  } elseif (isset($_POST['delete_tickets']) && !empty($_POST['ticket_ids'])) {
+    $ticket_ids = array_map('intval', $_POST['ticket_ids']);
+  }
 
-  // Start transaction
+  if (empty($ticket_ids)) {
+    $_SESSION['error_message'] = "No tickets selected for deletion";
+    header("Location: manager.php");
+    exit();
+  }
+
+  $ticket_ids_str = implode(',', $ticket_ids);
+
+  // First delete related records
+  $delete_queries = [
+    "DELETE FROM van_assignments WHERE ticket_id IN ($ticket_ids_str)",
+    "DELETE FROM ratings WHERE ticket_id IN ($ticket_ids_str)",
+    "DELETE FROM ticket_barcodes WHERE ticket_id IN ($ticket_ids_str)",
+    "DELETE FROM tickets WHERE id IN ($ticket_ids_str)"
+  ];
+
+  $success = true;
   mysqli_begin_transaction($conn);
 
-  try {
+  foreach ($delete_queries as $query) {
+    if (!mysqli_query($conn, $query)) {
+      $success = false;
+      $_SESSION['error_message'] = "Error deleting tickets: " . mysqli_error($conn);
+      mysqli_rollback($conn);
+      break;
+    }
+  }
 
-    $delete_assignments = "DELETE FROM van_assignments WHERE ticket_id = ?";
-    $stmt = mysqli_prepare($conn, $delete_assignments);
-    mysqli_stmt_bind_param($stmt, "i", $ticket_id);
-    mysqli_stmt_execute($stmt);
-
-    // Then delete the ticket
-    $delete_ticket = "DELETE FROM tickets WHERE id = ?";
-    $stmt = mysqli_prepare($conn, $delete_ticket);
-    mysqli_stmt_bind_param($stmt, "i", $ticket_id);
-    mysqli_stmt_execute($stmt);
-
+  if ($success) {
     mysqli_commit($conn);
-    $_SESSION['success_message'] = "Ticket #VT" . str_pad($ticket_id, 4, '0', STR_PAD_LEFT) . " deleted successfully!";
-  } catch (Exception $e) {
-    mysqli_rollback($conn);
-    $_SESSION['error_message'] = "Error deleting ticket: " . $e->getMessage();
+    $count = count($ticket_ids);
+    $_SESSION['success_message'] = "Successfully deleted $count ticket(s)!";
   }
 
   header("Location: manager.php");
@@ -983,28 +1000,48 @@ $ratings_stats = [
 ];
 
 $ratings_query = "SELECT 
-  AVG(stars) as average_rating,
-  COUNT(*) as total_ratings,
-  SUM(CASE WHEN stars = 1 THEN 1 ELSE 0 END) as one_star,
-  SUM(CASE WHEN stars = 2 THEN 1 ELSE 0 END) as two_stars,
-  SUM(CASE WHEN stars = 3 THEN 1 ELSE 0 END) as three_stars,
-  SUM(CASE WHEN stars = 4 THEN 1 ELSE 0 END) as four_stars,
-  SUM(CASE WHEN stars = 5 THEN 1 ELSE 0 END) as five_stars
+    AVG(stars) as average_rating,
+    COUNT(*) as total_ratings,
+    SUM(CASE WHEN stars = 1 THEN 1 ELSE 0 END) as one_star,
+    SUM(CASE WHEN stars = 2 THEN 1 ELSE 0 END) as two_stars,
+    SUM(CASE WHEN stars = 3 THEN 1 ELSE 0 END) as three_stars,
+    SUM(CASE WHEN stars = 4 THEN 1 ELSE 0 END) as four_stars,
+    SUM(CASE WHEN stars = 5 THEN 1 ELSE 0 END) as five_stars
 FROM ratings";
 
 $ratings_result = mysqli_query($conn, $ratings_query);
 if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
   $ratings_data = mysqli_fetch_assoc($ratings_result);
-  $ratings_stats['average_rating'] = round($ratings_data['average_rating'], 1);
-  $ratings_stats['total_ratings'] = $ratings_data['total_ratings'];
+
+  // Handle NULL values
+  $average_rating = $ratings_data['average_rating'] ?? 0;
+  $ratings_stats['average_rating'] = round($average_rating, 1);
+
+  $ratings_stats['total_ratings'] = $ratings_data['total_ratings'] ?? 0;
+
   $ratings_stats['rating_distribution'] = [
-      $ratings_data['one_star'],
-      $ratings_data['two_stars'],
-      $ratings_data['three_stars'],
-      $ratings_data['four_stars'],
-      $ratings_data['five_stars']
+    $ratings_data['one_star'] ?? 0,
+    $ratings_data['two_stars'] ?? 0,
+    $ratings_data['three_stars'] ?? 0,
+    $ratings_data['four_stars'] ?? 0,
+    $ratings_data['five_stars'] ?? 0
   ];
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VAN BOUNDARY MANAGEMENT
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 ?>
 
 
@@ -1036,6 +1073,7 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
         <li><a href="#dashboard" class="active" data-section="dashboard"><i class="fas fa-ticket"></i> Tickets</a></li>
         <li><a href="#tickets-pd" data-section="tickets-pd"><i class="fas fa-barcode"></i> Ticket Barcodes</a></li>
         <li><a href="#van-management" data-section="van-management"><i class="fas fa-van-shuttle"></i> Van Management</a></li>
+        <li><a href="#boundary-management" data-section="boundary-management"><i class="fas fa-route"></i> Van Boundaries</a></li>
         <li><a href="#destination-management" data-section="destination-management"><i class="fas fa-map-marked-alt"></i> Destinations</a></li>
         <li><a href="#reports" data-section="reports"><i class="fas fa-chart-line"></i> Reports</a></li>
         <li><a href="#settings" data-section="settings"><i class="fas fa-cog"></i> Settings</a></li>
@@ -1270,100 +1308,100 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
         <div class="dashboard-row">
           <!-- Revenue Graph -->
           <div class="dashboard-card wide">
-  <div class="card-header">
-    <h3>Monthly Revenue</h3>
-    <div class="card-actions">
-      <button class="chart-action-btn" data-chart="revenueChartv2" data-type="line">
-        <i class="fas fa-chart-line"></i>
-      </button>
-      <button class="chart-action-btn" data-chart="revenueChartv2" data-type="bar">
-        <i class="fas fa-chart-bar"></i>
-      </button>
-    </div>
-  </div>
-  <div class="card-body">
-    <canvas id="revenueChartv2"></canvas>
-  </div>
-</div>
+            <div class="card-header">
+              <h3>Monthly Revenue</h3>
+              <div class="card-actions">
+                <button class="chart-action-btn" data-chart="revenueChartv2" data-type="line">
+                  <i class="fas fa-chart-line"></i>
+                </button>
+                <button class="chart-action-btn" data-chart="revenueChartv2" data-type="bar">
+                  <i class="fas fa-chart-bar"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <canvas id="revenueChartv2"></canvas>
+            </div>
+          </div>
 
           <!-- Recent Tickets -->
-<div class="dashboard-card">
-  <div class="card-header">
-    <h3>Recent Tickets</h3>
-  </div>
-  <div class="card-body">
-    <div class="recent-tickets">
-      <?php
-      // Get recent tickets
-      $recentTicketsQuery = "SELECT t.id, t.travel_date, t.total_amount, 
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3>Recent Tickets</h3>
+            </div>
+            <div class="card-body">
+              <div class="recent-tickets">
+                <?php
+                // Get recent tickets
+                $recentTicketsQuery = "SELECT t.id, t.travel_date, t.total_amount, 
                       u.full_name as customer_name, d.name as destination_name
                       FROM tickets t
                       JOIN users u ON t.user_id = u.id
                       JOIN destinations d ON t.destination_id = d.id
                       ORDER BY t.id DESC
                       LIMIT 5";
-      $recentTicketsResult = mysqli_query($conn, $recentTicketsQuery);
+                $recentTicketsResult = mysqli_query($conn, $recentTicketsQuery);
 
-      if (mysqli_num_rows($recentTicketsResult)) {
-        while ($ticket = mysqli_fetch_assoc($recentTicketsResult)) {
-          echo '<div class="ticket-item">';
-          echo '<div class="ticket-id">VT' . str_pad($ticket['id'], 4, '0', STR_PAD_LEFT) . '</div>';
-          echo '<div class="ticket-details">';
-          echo '<div class="ticket-customer">' . htmlspecialchars(substr($ticket['customer_name'], 0, 15)) . (strlen($ticket['customer_name']) > 15 ? '...' : '') . '</div>';
-          echo '<div class="ticket-destination">' . htmlspecialchars(substr($ticket['destination_name'], 0, 20)) . (strlen($ticket['destination_name']) > 20 ? '...' : '') . '</div>';
-          echo '</div>';
-          echo '<div class="ticket-amount">₱' . number_format($ticket['total_amount'], 2) . '</div>';
-          echo '</div>';
-        }
-      } else {
-        echo '<p>No recent tickets found</p>';
-      }
-      ?>
-    </div>
-  </div>
-  
-</div>
-<div class="stat-card3">
-  <div class="card-icon3">
-    <i class="fas fa-star"></i>
-  </div>
-  <div class="card-content3">
-    <h3>Customer Ratings</h3>
-    <div class="value"><?php echo $ratings_stats['average_rating']; ?>/5</div>
-    <div class="subtext">from <?php echo $ratings_stats['total_ratings']; ?> reviews</div>
-    
-    <div class="stars-container">
-      <?php
-      $avg_rating = $ratings_stats['average_rating'];
-      for ($i = 1; $i <= 5; $i++) {
-          if ($i <= floor($avg_rating)) {
-              echo '<i class="fas fa-star star"></i>';
-          } elseif ($i == ceil($avg_rating) && ($avg_rating - floor($avg_rating)) >= 0.5) {
-              echo '<i class="fas fa-star-half-alt star"></i>';
-          } else {
-              echo '<i class="far fa-star star"></i>';
-          }
-      }
-      ?>
-    </div>
-    
-    <div class="rating-distribution">
-      <?php for ($i = 5; $i >= 1; $i--): 
-        $count = $ratings_stats['rating_distribution'][$i-1];
-        $percentage = $ratings_stats['total_ratings'] > 0 ? 
-                     round(($count / $ratings_stats['total_ratings']) * 100) : 0;
-      ?>
-      <div class="rating-bar">
-        <div class="star-count"><?php echo $i; ?>★</div>
-        <div class="bar-container">
-          <div class="bar" style="width: <?php echo $percentage; ?>%"></div>
-        </div>
-        <div class="percentage"><?php echo $percentage; ?>%</div>
-      </div>
-      <?php endfor; ?>
-    </div>
-  </div>
-</div>
+                if (mysqli_num_rows($recentTicketsResult)) {
+                  while ($ticket = mysqli_fetch_assoc($recentTicketsResult)) {
+                    echo '<div class="ticket-item">';
+                    echo '<div class="ticket-id">VT' . str_pad($ticket['id'], 4, '0', STR_PAD_LEFT) . '</div>';
+                    echo '<div class="ticket-details">';
+                    echo '<div class="ticket-customer">' . htmlspecialchars(substr($ticket['customer_name'], 0, 15)) . (strlen($ticket['customer_name']) > 15 ? '...' : '') . '</div>';
+                    echo '<div class="ticket-destination">' . htmlspecialchars(substr($ticket['destination_name'], 0, 20)) . (strlen($ticket['destination_name']) > 20 ? '...' : '') . '</div>';
+                    echo '</div>';
+                    echo '<div class="ticket-amount">₱' . number_format($ticket['total_amount'], 2) . '</div>';
+                    echo '</div>';
+                  }
+                } else {
+                  echo '<p>No recent tickets found</p>';
+                }
+                ?>
+              </div>
+            </div>
+
+          </div>
+          <div class="stat-card3">
+            <div class="card-icon3">
+              <i class="fas fa-star"></i>
+            </div>
+            <div class="card-content3">
+              <h3>Customer Ratings</h3>
+              <div class="value"><?php echo $ratings_stats['average_rating']; ?>/5</div>
+              <div class="subtext">from <?php echo $ratings_stats['total_ratings']; ?> reviews</div>
+
+              <div class="stars-container">
+                <?php
+                $avg_rating = $ratings_stats['average_rating'];
+                for ($i = 1; $i <= 5; $i++) {
+                  if ($i <= floor($avg_rating)) {
+                    echo '<i class="fas fa-star star"></i>';
+                  } elseif ($i == ceil($avg_rating) && ($avg_rating - floor($avg_rating)) >= 0.5) {
+                    echo '<i class="fas fa-star-half-alt star"></i>';
+                  } else {
+                    echo '<i class="far fa-star star"></i>';
+                  }
+                }
+                ?>
+              </div>
+
+              <div class="rating-distribution">
+                <?php for ($i = 5; $i >= 1; $i--):
+                  $count = $ratings_stats['rating_distribution'][$i - 1];
+                  $percentage = $ratings_stats['total_ratings'] > 0 ?
+                    round(($count / $ratings_stats['total_ratings']) * 100) : 0;
+                ?>
+                  <div class="rating-bar">
+                    <div class="star-count"><?php echo $i; ?>★</div>
+                    <div class="bar-container">
+                      <div class="bar" style="width: <?php echo $percentage; ?>%"></div>
+                    </div>
+                    <div class="percentage"><?php echo $percentage; ?>%</div>
+                  </div>
+                <?php endfor; ?>
+              </div>
+            </div>
+          </div>
 
 
         </div>
@@ -1378,7 +1416,7 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
  /////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
 
 
-      <!-- Dashboard Section -->
+      <!-- Dashboard Section buut inside a ticket section -->
       <section id="dashboard" class="dashboard-section">
         <div class="dashboard-header">
           <h2>Ticket Management</h2>
@@ -1410,6 +1448,9 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
             <button class="btn btn-secondary" id="reset-filters">
               <i class="fas fa-sync-alt"></i> Reset
             </button>
+            <button class="btn btn-danger" id="delete-selected" style="margin-left: auto;">
+              <i class="fas fa-trash"></i> Delete Selected
+            </button>
           </div>
         </div>
 
@@ -1432,6 +1473,7 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
           <table>
             <thead>
               <tr>
+
                 <th>Ticket #</th>
                 <th>Customer</th>
                 <th>From</th>
@@ -1441,8 +1483,11 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
                 <th>Amount</th>
                 <th>Status</th>
                 <th>Actions</th>
+                <th><input type="checkbox" id="select-all"></th>
               </tr>
             </thead>
+
+
             <tbody>
               <?php foreach ($tickets as $ticket): ?>
                 <tr>
@@ -1459,7 +1504,9 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
                     </span>
                   </td>
                   <td>
+                    <!-- Status Change Form -->
                     <form method="post" class="ticket-action-form">
+                      <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                       <input type="hidden" name="ticket_id" value="<?php echo $ticket['id']; ?>">
                       <select name="new_status" class="action-dropdown"
                         onchange="confirmStatusChange(this)"
@@ -1468,19 +1515,94 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
                         <option value="completed" <?php echo $ticket['status'] === 'completed' ? 'selected' : ''; ?>>Completed</option>
                         <option value="cancelled" <?php echo $ticket['status'] === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
                       </select>
-                      <form method="post" class="ticket-delete-form">
-                        <input type="hidden" name="ticket_id" value="<?php echo $ticket['id']; ?>">
-                        <button type="submit" name="delete_ticket" class="btn btn-danger btn-sm"
-                          onclick="return confirmDeleteTicket(event, <?php echo $ticket['id']; ?>);">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      </form>
                     </form>
+
+                    <form method="post" class="ticket-delete-form" action="manager.php">
+                      <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                      <input type="hidden" name="ticket_id" value="<?php echo $ticket['id']; ?>">
+                      <button type="submit" name="delete_ticket" class="btn btn-danger btn-sm"
+                        onclick="return confirm('Are you sure you want to delete this ticket?');">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </form>
+                  </td>
+                  <td><input type="checkbox" name="ticket_ids[]" value="<?php echo $ticket['id']; ?>" class="ticket-checkbox"></td>
+
                 </tr>
               <?php endforeach; ?>
             </tbody>
+
+
           </table>
         </div>
+
+
+
+
+        <script>
+          // Select all checkbox functionality
+          document.getElementById('select-all').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.ticket-checkbox');
+            checkboxes.forEach(checkbox => {
+              checkbox.checked = this.checked;
+            });
+          });
+
+          // Mass delete functionality
+          document.getElementById('delete-selected').addEventListener('click', function() {
+            const selectedTickets = Array.from(document.querySelectorAll('.ticket-checkbox:checked')).map(cb => cb.value);
+
+            if (selectedTickets.length === 0) {
+              alert('Please select at least one ticket to delete.');
+              return;
+            }
+
+            if (confirm(`Are you sure you want to delete ${selectedTickets.length} selected ticket(s)?`)) {
+              const form = document.createElement('form');
+              form.method = 'post';
+              form.action = 'manager.php';
+
+              const csrfInput = document.createElement('input');
+              csrfInput.type = 'hidden';
+              csrfInput.name = 'csrf_token';
+              csrfInput.value = '<?php echo $_SESSION['csrf_token']; ?>';
+              form.appendChild(csrfInput);
+
+              selectedTickets.forEach(ticketId => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'ticket_ids[]';
+                input.value = ticketId;
+                form.appendChild(input);
+              });
+
+              const deleteInput = document.createElement('input');
+              deleteInput.type = 'hidden';
+              deleteInput.name = 'delete_tickets';
+              form.appendChild(deleteInput);
+
+              document.body.appendChild(form);
+              form.submit();
+            }
+          });
+
+
+
+
+          document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('ticket-checkbox') || e.target.id === 'select-all') {
+              const selectedCount = document.querySelectorAll('.ticket-checkbox:checked').length;
+              const deleteBtn = document.getElementById('delete-selected');
+
+              if (selectedCount > 0) {
+                deleteBtn.classList.add('show');
+                deleteBtn.innerHTML = `<i class="fas fa-trash"></i> Delete Selected (${selectedCount})`;
+              } else {
+                deleteBtn.classList.remove('show');
+              }
+            }
+          });
+        </script>
       </section>
 
       <!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1489,219 +1611,218 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
  /////////////////////////////////////////////////////////////////////////////////////////////////////////////
  /////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
 
-<!-- Tickets PD Section -->
-<section id="tickets-pd" class="dashboard-section">
-    <div class="dashboard-header">
-        <h2>Ticket Barcode Management</h2>
-        <div class="filter-controls">
+      <!-- Tickets PD Section -->
+      <section id="tickets-pd" class="dashboard-section">
+        <div class="dashboard-header">
+          <h2>Ticket Barcode Management</h2>
+          <div class="filter-controls">
             <div class="search-bar">
-                <input type="text" id="barcode-search" placeholder="Search barcodes...">
-                <button id="search-barcodes"><i class="fas fa-search"></i></button>
+              <input type="text" id="barcode-search" placeholder="Search barcodes...">
+              <button id="search-barcodes"><i class="fas fa-search"></i></button>
             </div>
             <div class="filter-group">
-                <label for="scan-status-filter">Scan Status:</label>
-                <select id="scan-status-filter">
-                    <option value="all">All Statuses</option>
-                    <option value="scanned">Scanned</option>
-                    <option value="unscanned">Unscanned</option>
-                </select>
+              <label for="scan-status-filter">Scan Status:</label>
+              <select id="scan-status-filter">
+                <option value="all">All Statuses</option>
+                <option value="scanned">Scanned</option>
+                <option value="unscanned">Unscanned</option>
+              </select>
             </div>
             <button class="btn btn-secondary" id="reset-barcode-filters">
-                <i class="fas fa-sync-alt"></i> Reset
+              <i class="fas fa-sync-alt"></i> Reset
             </button>
+          </div>
         </div>
-    </div>
 
-    <div class="stats-container">
-        <div class="stat-card">
+        <div class="stats-container">
+          <div class="stat-card">
             <h3>Total Barcodes</h3>
             <div class="value">
-                <?php 
-                $totalBarcodesQuery = "SELECT COUNT(*) as total FROM ticket_barcodes";
-                $totalBarcodesResult = mysqli_query($conn, $totalBarcodesQuery);
-                $totalBarcodes = mysqli_fetch_assoc($totalBarcodesResult);
-                echo number_format($totalBarcodes['total'] ?? 0);
-                ?>
+              <?php
+              $totalBarcodesQuery = "SELECT COUNT(*) as total FROM ticket_barcodes";
+              $totalBarcodesResult = mysqli_query($conn, $totalBarcodesQuery);
+              $totalBarcodes = mysqli_fetch_assoc($totalBarcodesResult);
+              echo number_format($totalBarcodes['total'] ?? 0);
+              ?>
             </div>
-        </div>
-        <div class="stat-card">
+          </div>
+          <div class="stat-card">
             <h3>Scanned</h3>
             <div class="value">
-                <?php 
-                $scannedBarcodesQuery = "SELECT COUNT(*) as scanned FROM ticket_barcodes WHERE scan_status = 'scanned'";
-                $scannedBarcodesResult = mysqli_query($conn, $scannedBarcodesQuery);
-                $scannedBarcodes = mysqli_fetch_assoc($scannedBarcodesResult);
-                echo number_format($scannedBarcodes['scanned'] ?? 0);
-                ?>
+              <?php
+              $scannedBarcodesQuery = "SELECT COUNT(*) as scanned FROM ticket_barcodes WHERE scan_status = 'scanned'";
+              $scannedBarcodesResult = mysqli_query($conn, $scannedBarcodesQuery);
+              $scannedBarcodes = mysqli_fetch_assoc($scannedBarcodesResult);
+              echo number_format($scannedBarcodes['scanned'] ?? 0);
+              ?>
             </div>
-        </div>
-        <div class="stat-card">
+          </div>
+          <div class="stat-card">
             <h3>Unscanned</h3>
             <div class="value">
-                <?php 
-                $unscannedBarcodesQuery = "SELECT COUNT(*) as unscanned FROM ticket_barcodes WHERE scan_status = 'unscanned'";
-                $unscannedBarcodesResult = mysqli_query($conn, $unscannedBarcodesQuery);
-                $unscannedBarcodes = mysqli_fetch_assoc($unscannedBarcodesResult);
-                echo number_format($unscannedBarcodes['unscanned'] ?? 0);
-                ?>
+              <?php
+              $unscannedBarcodesQuery = "SELECT COUNT(*) as unscanned FROM ticket_barcodes WHERE scan_status = 'unscanned'";
+              $unscannedBarcodesResult = mysqli_query($conn, $unscannedBarcodesQuery);
+              $unscannedBarcodes = mysqli_fetch_assoc($unscannedBarcodesResult);
+              echo number_format($unscannedBarcodes['unscanned'] ?? 0);
+              ?>
             </div>
+          </div>
         </div>
-    </div>
 
-    <div class="data-table">
-        <table>
+        <div class="data-table">
+          <table>
             <thead>
-                <tr>
-                    <th>Barcode ID</th>
-                    <th>Ticket ID</th>
-                    <th>Barcode Value</th>
-                    <th>Scan Status</th>
-                    <th>Scan Time</th>
-                    <th>Scanned By</th>
-                </tr>
+              <tr>
+                <th>Barcode ID</th>
+                <th>Ticket ID</th>
+                <th>Barcode Value</th>
+                <th>Scan Status</th>
+                <th>Scan Time</th>
+                <th>Scanned By</th>
+              </tr>
             </thead>
             <tbody>
-                <?php
-                // Handle barcode filtering
-                $barcode_filter_where = "";
-                $barcode_filter_params = [];
-                $barcode_filter_types = "";
+              <?php
+              // Handle barcode filtering
+              $barcode_filter_where = "";
+              $barcode_filter_params = [];
+              $barcode_filter_types = "";
 
-                if (isset($_GET['filter_barcodes'])) {
-                    if (isset($_GET['scan_status']) && $_GET['scan_status'] != 'all') {
-                        $barcode_filter_where .= " AND scan_status = ?";
-                        $barcode_filter_params[] = $_GET['scan_status'];
-                        $barcode_filter_types .= 's';
-                    }
-
-                    if (isset($_GET['search']) && !empty($_GET['search'])) {
-                        $search = "%" . $_GET['search'] . "%";
-                        $barcode_filter_where .= " AND (barcode_value LIKE ? OR ticket_id LIKE ?)";
-                        $barcode_filter_params[] = $search;
-                        $barcode_filter_params[] = $search;
-                        $barcode_filter_types .= 'ss';
-                    }
+              if (isset($_GET['filter_barcodes'])) {
+                if (isset($_GET['scan_status']) && $_GET['scan_status'] != 'all') {
+                  $barcode_filter_where .= " AND scan_status = ?";
+                  $barcode_filter_params[] = $_GET['scan_status'];
+                  $barcode_filter_types .= 's';
                 }
 
-                // Get all barcodes
-                $barcodes_query = "SELECT tb.*, u.full_name as scanned_by_name 
+                if (isset($_GET['search']) && !empty($_GET['search'])) {
+                  $search = "%" . $_GET['search'] . "%";
+                  $barcode_filter_where .= " AND (barcode_value LIKE ? OR ticket_id LIKE ?)";
+                  $barcode_filter_params[] = $search;
+                  $barcode_filter_params[] = $search;
+                  $barcode_filter_types .= 'ss';
+                }
+              }
+
+              // Get all barcodes
+              $barcodes_query = "SELECT tb.*, u.full_name as scanned_by_name 
                                  FROM ticket_barcodes tb
                                  LEFT JOIN users u ON tb.scanned_by = u.id
                                  WHERE 1=1 $barcode_filter_where
                                  ORDER BY tb.id DESC";
 
-                if (!empty($barcode_filter_params)) {
-                    $stmt = mysqli_prepare($conn, $barcodes_query);
-                    mysqli_stmt_bind_param($stmt, $barcode_filter_types, ...$barcode_filter_params);
-                    mysqli_stmt_execute($stmt);
-                    $barcodes_result = mysqli_stmt_get_result($stmt);
-                } else {
-                    $barcodes_result = mysqli_query($conn, $barcodes_query);
-                }
+              if (!empty($barcode_filter_params)) {
+                $stmt = mysqli_prepare($conn, $barcodes_query);
+                mysqli_stmt_bind_param($stmt, $barcode_filter_types, ...$barcode_filter_params);
+                mysqli_stmt_execute($stmt);
+                $barcodes_result = mysqli_stmt_get_result($stmt);
+              } else {
+                $barcodes_result = mysqli_query($conn, $barcodes_query);
+              }
 
-                if ($barcodes_result && mysqli_num_rows($barcodes_result) > 0) {
-                    while ($barcode = mysqli_fetch_assoc($barcodes_result)) {
-                        echo '<tr>';
-                        echo '<td>' . $barcode['id'] . '</td>';
-                        echo '<td>VT' . str_pad($barcode['ticket_id'], 4, '0', STR_PAD_LEFT) . '</td>';
-                        echo '<td>' . htmlspecialchars($barcode['barcode_value']) . '</td>';
-                        echo '<td><span class="status-badge status-' . $barcode['scan_status'] . '">' . 
-                             ucfirst($barcode['scan_status']) . '</span></td>';
-                        echo '<td>' . ($barcode['scan_time'] ? date('M j, Y H:i', strtotime($barcode['scan_time'])) : '-') . '</td>';
-                        echo '<td>' . ($barcode['scanned_by_name'] ? htmlspecialchars($barcode['scanned_by_name']) : '-') . '</td>';
-                        echo '</tr>';
-                    }
-                } else {
-                    echo '<tr><td colspan="6">No barcode records found</td></tr>';
+              if ($barcodes_result && mysqli_num_rows($barcodes_result) > 0) {
+                while ($barcode = mysqli_fetch_assoc($barcodes_result)) {
+                  echo '<tr>';
+                  echo '<td>' . $barcode['id'] . '</td>';
+                  echo '<td>VT' . str_pad($barcode['ticket_id'], 4, '0', STR_PAD_LEFT) . '</td>';
+                  echo '<td>' . htmlspecialchars($barcode['barcode_value']) . '</td>';
+                  echo '<td><span class="status-badge status-' . $barcode['scan_status'] . '">' .
+                    ucfirst($barcode['scan_status']) . '</span></td>';
+                  echo '<td>' . ($barcode['scan_time'] ? date('M j, Y H:i', strtotime($barcode['scan_time'])) : '-') . '</td>';
+                  echo '<td>' . ($barcode['scanned_by_name'] ? htmlspecialchars($barcode['scanned_by_name']) : '-') . '</td>';
+                  echo '</tr>';
                 }
-                ?>
+              } else {
+                echo '<tr><td colspan="6">No barcode records found</td></tr>';
+              }
+              ?>
             </tbody>
-        </table>
-    </div>
+          </table>
+        </div>
 
 
-    <style>
+        <style>
+          /* Barcode Status Badges */
+          .status-badge.status-scanned {
+            background-color: #28a745;
+            color: white;
+          }
 
-      /* Barcode Status Badges */
-.status-badge.status-scanned {
-    background-color: #28a745;
-    color: white;
-}
+          .status-badge.status-unscanned {
+            background-color: #6c757d;
+            color: white;
+          }
 
-.status-badge.status-unscanned {
-    background-color: #6c757d;
-    color: white;
-}
+          /* Barcode Table Styles */
+          #tickets-pd table td:nth-child(3) {
+            font-family: monospace;
+            font-size: 0.9em;
+          }
 
-/* Barcode Table Styles */
-#tickets-pd table td:nth-child(3) {
-    font-family: monospace;
-    font-size: 0.9em;
-}
-
-#tickets-pd table td:nth-child(4) {
-    text-align: center;
-}
-    </style>
-
+          #tickets-pd table td:nth-child(4) {
+            text-align: center;
+          }
+        </style>
 
 
-    <script>
-// Add to your existing JavaScript
-function initBarcodeFilters() {
-    const barcodeSearch = document.getElementById('barcode-search');
-    const scanStatusFilter = document.getElementById('scan-status-filter');
-    const resetFiltersBtn = document.getElementById('reset-barcode-filters');
 
-    barcodeSearch.addEventListener('input', debounce(filterBarcodes, 300));
-    scanStatusFilter.addEventListener('change', filterBarcodes);
-    resetFiltersBtn.addEventListener('click', resetBarcodeFilters);
-}
+        <script>
+          // Add to your existing JavaScript
+          function initBarcodeFilters() {
+            const barcodeSearch = document.getElementById('barcode-search');
+            const scanStatusFilter = document.getElementById('scan-status-filter');
+            const resetFiltersBtn = document.getElementById('reset-barcode-filters');
 
-function filterBarcodes() {
-    const searchTerm = document.getElementById('barcode-search').value;
-    const scanStatusFilter = document.getElementById('scan-status-filter').value;
+            barcodeSearch.addEventListener('input', debounce(filterBarcodes, 300));
+            scanStatusFilter.addEventListener('change', filterBarcodes);
+            resetFiltersBtn.addEventListener('click', resetBarcodeFilters);
+          }
 
-    const params = new URLSearchParams();
-    if (searchTerm) params.append('search', searchTerm);
-    if (scanStatusFilter !== 'all') params.append('scan_status', scanStatusFilter);
-    params.append('filter_barcodes', '1');
+          function filterBarcodes() {
+            const searchTerm = document.getElementById('barcode-search').value;
+            const scanStatusFilter = document.getElementById('scan-status-filter').value;
 
-    fetch(`manager.php?${params.toString()}`)
-        .then(response => response.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const newTable = doc.querySelector('#tickets-pd tbody');
-            if (newTable) {
-                document.querySelector('#tickets-pd tbody').innerHTML = newTable.innerHTML;
-            }
-        })
-        .catch(error => console.error('Error:', error));
-}
+            const params = new URLSearchParams();
+            if (searchTerm) params.append('search', searchTerm);
+            if (scanStatusFilter !== 'all') params.append('scan_status', scanStatusFilter);
+            params.append('filter_barcodes', '1');
 
-function resetBarcodeFilters() {
-    document.getElementById('barcode-search').value = '';
-    document.getElementById('scan-status-filter').value = 'all';
-    filterBarcodes();
-}
+            fetch(`manager.php?${params.toString()}`)
+              .then(response => response.text())
+              .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newTable = doc.querySelector('#tickets-pd tbody');
+                if (newTable) {
+                  document.querySelector('#tickets-pd tbody').innerHTML = newTable.innerHTML;
+                }
+              })
+              .catch(error => console.error('Error:', error));
+          }
 
-// Add initBarcodeFilters to your DOMContentLoaded event listener
-document.addEventListener('DOMContentLoaded', function() {
-    // ... existing code ...
-    initBarcodeFilters();
-});
-    </script>
+          function resetBarcodeFilters() {
+            document.getElementById('barcode-search').value = '';
+            document.getElementById('scan-status-filter').value = 'all';
+            filterBarcodes();
+          }
 
-</section>
- 
+          // Add initBarcodeFilters to your DOMContentLoaded event listener
+          document.addEventListener('DOMContentLoaded', function() {
+            // ... existing code ...
+            initBarcodeFilters();
+          });
+        </script>
+
+      </section>
+
       <!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////
  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
  /////////////////////////////////////////////////////////////////////////////////////////////////////////////
  /////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
 
- 
+
 
       <!-- Van Management Section -->
       <section id="van-management" class="dashboard-section">
@@ -1817,6 +1938,381 @@ document.addEventListener('DOMContentLoaded', function() {
           </table>
         </div>
       </section>
+
+      <!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+
+
+<!-- Add this section to your manager.php file, typically after the Van Management section -->
+<section id="boundary-management" class="dashboard-section">
+    <div class="dashboard-header">
+        <h2>Van Boundary Management</h2>
+        <div class="filter-controls">
+            <div class="search-bar">
+                <input type="text" id="boundary-search" placeholder="Search boundaries...">
+                <button id="search-boundaries"><i class="fas fa-search"></i></button>
+            </div>
+            <div class="filter-group">
+                <label for="boundary-date-filter">Date:</label>
+                <input type="date" id="boundary-date-filter" value="<?php echo date('Y-m-d'); ?>">
+            </div>
+            <div class="filter-group">
+                <label for="boundary-terminal-filter">Terminal:</label>
+                <select id="boundary-terminal-filter">
+                    <option value="all">All Terminals</option>
+                    <?php foreach ($terminals as $terminal): ?>
+                        <option value="<?php echo $terminal['id']; ?>">
+                            <?php echo htmlspecialchars($terminal['name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <button class="btn btn-secondary" id="reset-boundary-filters">
+                <i class="fas fa-sync-alt"></i> Reset
+            </button>
+            <button class="btn btn-primary" id="generate-boundary-report">
+                <i class="fas fa-file-pdf"></i> Generate Report
+            </button>
+        </div>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>Today's Boarded Vans</h3>
+            <div class="value">
+                <?php 
+                $today = date('Y-m-d');
+                $query = "SELECT COUNT(DISTINCT van_id) as count 
+                          FROM van_boundaries 
+                          WHERE DATE(boundary_time) = '$today'";
+                $result = mysqli_query($conn, $query);
+                $count = mysqli_fetch_assoc($result);
+                echo $count['count'] ?? 0;
+                ?>
+            </div>
+        </div>
+        <div class="stat-card">
+            <h3>This Month's Boarded Vans</h3>
+            <div class="value">
+                <?php 
+                $monthStart = date('Y-m-01');
+                $query = "SELECT COUNT(DISTINCT van_id) as count 
+                          FROM van_boundaries 
+                          WHERE DATE(boundary_time) >= '$monthStart'";
+                $result = mysqli_query($conn, $query);
+                $count = mysqli_fetch_assoc($result);
+                echo $count['count'] ?? 0;
+                ?>
+            </div>
+        </div>
+        <div class="stat-card">
+            <h3>Last Month's Total</h3>
+            <div class="value">
+                <?php 
+                $lastMonthStart = date('Y-m-01', strtotime('-1 month'));
+                $lastMonthEnd = date('Y-m-t', strtotime('-1 month'));
+                $query = "SELECT COUNT(DISTINCT van_id) as count 
+                          FROM van_boundaries 
+                          WHERE DATE(boundary_time) BETWEEN '$lastMonthStart' AND '$lastMonthEnd'";
+                $result = mysqli_query($conn, $query);
+                $count = mysqli_fetch_assoc($result);
+                echo $count['count'] ?? 0;
+                ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-table">
+        <table id="boundaries-table">
+            <thead>
+                <tr>
+                    <th>Van ID</th>
+                    <th>License Plate</th>
+                    <th>Terminal</th>
+                    <th>Boundary Time</th>
+                    <th>Driver</th>
+                    <th>Passenger Count</th>
+                    <th>Boundary Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                // Get today's boundaries by default
+                $query = "SELECT b.*, v.license_plate, v.driver_name, t.name as terminal_name 
+                          FROM van_boundaries b
+                          JOIN vans v ON b.van_id = v.id
+                          JOIN terminals t ON v.terminal_id = t.id
+                          WHERE DATE(b.boundary_time) = '$today'
+                          ORDER BY b.boundary_time DESC";
+                $result = mysqli_query($conn, $query);
+                
+                if ($result && mysqli_num_rows($result) > 0) {
+                    while ($row = mysqli_fetch_assoc($result)) {
+                        echo '<tr>';
+                        echo '<td>' . htmlspecialchars($row['van_id']) . '</td>';
+                        echo '<td>' . htmlspecialchars($row['license_plate']) . '</td>';
+                        echo '<td>' . htmlspecialchars($row['terminal_name']) . '</td>';
+                        echo '<td>' . date('M j, Y H:i', strtotime($row['boundary_time'])) . '</td>';
+                        echo '<td>' . htmlspecialchars($row['driver_name'] ?? '-') . '</td>';
+                        echo '<td>' . $row['passenger_count'] . '</td>';
+                        echo '<td>₱' . number_format($row['boundary_amount'], 2) . '</td>';
+                        echo '<td>';
+                        echo '<button class="btn btn-sm btn-primary edit-boundary" data-boundary-id="' . $row['id'] . '">';
+                        echo '<i class="fas fa-edit"></i> Edit';
+                        echo '</button>';
+                        echo '</td>';
+                        echo '</tr>';
+                    }
+                } else {
+                    echo '<tr><td colspan="8">No boundary records found for today</td></tr>';
+                }
+                ?>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Boundary Report Modal -->
+    <div class="modal" id="boundary-report-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Generate Boundary Report</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="boundary-report-form" method="post" action="generate_boundary_report.php">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="report-month">Month:</label>
+                        <select id="report-month" name="month" required>
+                            <?php
+                            for ($i = 1; $i <= 12; $i++) {
+                                $monthName = date('F', mktime(0, 0, 0, $i, 1));
+                                $selected = ($i == date('n')) ? 'selected' : '';
+                                echo "<option value='$i' $selected>$monthName</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="report-year">Year:</label>
+                        <select id="report-year" name="year" required>
+                            <?php
+                            $currentYear = date('Y');
+                            for ($i = $currentYear - 2; $i <= $currentYear + 2; $i++) {
+                                $selected = ($i == $currentYear) ? 'selected' : '';
+                                echo "<option value='$i' $selected>$i</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="report-terminal">Terminal (optional):</label>
+                        <select id="report-terminal" name="terminal_id">
+                            <option value="all">All Terminals</option>
+                            <?php foreach ($terminals as $terminal): ?>
+                                <option value="<?php echo $terminal['id']; ?>">
+                                    <?php echo htmlspecialchars($terminal['name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="report-format">Format:</label>
+                        <select id="report-format" name="format" required>
+                            <option value="pdf">PDF</option>
+                            <option value="excel">Excel</option>
+                            <option value="csv">CSV</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancel-boundary-report">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Boundary Modal -->
+    <div class="modal" id="boundary-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="boundary-modal-title">Record Van Boundary</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="boundary-form" method="post" action="save_boundary.php">
+                <input type="hidden" name="boundary_id" id="boundary-id">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="boundary-van-id">Van:</label>
+                        <select id="boundary-van-id" name="van_id" required>
+                            <option value="">-- Select Van --</option>
+                            <?php 
+                            $vansQuery = "SELECT v.id, v.license_plate, v.driver_name, t.name as terminal_name 
+                                         FROM vans v 
+                                         JOIN terminals t ON v.terminal_id = t.id 
+                                         WHERE v.status = 'active' 
+                                         ORDER BY t.name, v.id";
+                            $vansResult = mysqli_query($conn, $vansQuery);
+                            while ($van = mysqli_fetch_assoc($vansResult)) {
+                                echo '<option value="' . $van['id'] . '">';
+                                echo htmlspecialchars($van['id'] . ' - ' . $van['license_plate'] . ' (' . $van['terminal_name'] . ')');
+                                if ($van['driver_name']) {
+                                    echo ' - ' . htmlspecialchars($van['driver_name']);
+                                }
+                                echo '</option>';
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="boundary-passengers">Passenger Count:</label>
+                            <input type="number" id="boundary-passengers" name="passenger_count" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="boundary-amount">Boundary Amount (₱):</label>
+                            <input type="number" id="boundary-amount" name="boundary_amount" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="boundary-notes">Notes:</label>
+                        <textarea id="boundary-notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancel-boundary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Boundary</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- Add this JavaScript to your existing script section -->
+<script>
+    // Initialize boundary management
+    function initBoundaryManagement() {
+        // Boundary filters
+        const boundarySearch = document.getElementById('boundary-search');
+        const boundaryDateFilter = document.getElementById('boundary-date-filter');
+        const boundaryTerminalFilter = document.getElementById('boundary-terminal-filter');
+        const resetBoundaryFiltersBtn = document.getElementById('reset-boundary-filters');
+
+        boundarySearch.addEventListener('input', debounce(filterBoundaries, 300));
+        boundaryDateFilter.addEventListener('change', filterBoundaries);
+        boundaryTerminalFilter.addEventListener('change', filterBoundaries);
+        resetBoundaryFiltersBtn.addEventListener('click', resetBoundaryFilters);
+
+        // Report generation
+        document.getElementById('generate-boundary-report').addEventListener('click', function() {
+            showModal('boundary-report-modal');
+        });
+
+        // Boundary modal
+        document.getElementById('cancel-boundary-report').addEventListener('click', function() {
+            hideModal('boundary-report-modal');
+        });
+
+        // Add new boundary
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('edit-boundary')) {
+                const boundaryId = e.target.getAttribute('data-boundary-id');
+                showEditBoundaryModal(boundaryId);
+            }
+        });
+
+        // Boundary form submission
+        document.getElementById('boundary-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitBoundaryForm(this);
+        });
+    }
+
+    // Filter boundaries
+    function filterBoundaries() {
+        const searchTerm = document.getElementById('boundary-search').value;
+        const dateFilter = document.getElementById('boundary-date-filter').value;
+        const terminalFilter = document.getElementById('boundary-terminal-filter').value;
+
+        const params = new URLSearchParams();
+        if (searchTerm) params.append('search', searchTerm);
+        if (dateFilter) params.append('date', dateFilter);
+        if (terminalFilter !== 'all') params.append('terminal', terminalFilter);
+
+        fetch(`get_boundaries.php?${params.toString()}`)
+            .then(response => response.text())
+            .then(html => {
+                document.querySelector('#boundaries-table tbody').innerHTML = html;
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    // Reset boundary filters
+    function resetBoundaryFilters() {
+        document.getElementById('boundary-search').value = '';
+        document.getElementById('boundary-date-filter').value = '<?php echo date('Y-m-d'); ?>';
+        document.getElementById('boundary-terminal-filter').value = 'all';
+        filterBoundaries();
+    }
+
+    // Show edit boundary modal
+    function showEditBoundaryModal(boundaryId) {
+        fetch(`get_boundary.php?id=${boundaryId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('boundary-modal-title').textContent = 'Edit Boundary Record';
+                    document.getElementById('boundary-id').value = data.boundary.id;
+                    document.getElementById('boundary-van-id').value = data.boundary.van_id;
+                    document.getElementById('boundary-passengers').value = data.boundary.passenger_count;
+                    document.getElementById('boundary-amount').value = data.boundary.boundary_amount;
+                    document.getElementById('boundary-notes').value = data.boundary.notes || '';
+                    showModal('boundary-modal');
+                } else {
+                    showErrorMessage(data.message || 'Error loading boundary data');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showErrorMessage('Error loading boundary data');
+            });
+    }
+
+    // Submit boundary form
+    function submitBoundaryForm(form) {
+        const formData = new FormData(form);
+        const boundaryId = formData.get('boundary_id');
+        const isEdit = !!boundaryId;
+
+        fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessMessage(data.message);
+                    hideModal('boundary-modal');
+                    filterBoundaries(); // Refresh the table
+                } else {
+                    showErrorMessage(data.message || 'Error saving boundary');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showErrorMessage('Error saving boundary');
+            });
+    }
+
+    // Call this in your main DOMContentLoaded event listener
+    document.addEventListener('DOMContentLoaded', function() {
+        initBoundaryManagement();
+    });
+</script>
 
 
       <!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1964,7 +2460,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="report-filters-container">
               <div class="report-filters">
                 <!-- Search Bar -->
-                
+
                 <!-- Type Filter -->
                 <div class="filter-group">
                   <div class="custom-select">
@@ -2129,61 +2625,61 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
 
             <div class="report-charts">
-  <div class="chart-row">
-    <!-- Revenue Trend Chart -->
-    <div class="chart-container" data-chart-type="revenue">
-      <div class="chart-header">
-        <h4>Revenue Trend</h4>
-        
-      </div>
-      <div class="chart-scroll-container">
-        <canvas id="salesChart"></canvas>
-      </div>
-    </div>
+              <div class="chart-row">
+                <!-- Revenue Trend Chart -->
+                <div class="chart-container" data-chart-type="revenue">
+                  <div class="chart-header">
+                    <h4>Revenue Trend</h4>
 
-    <!-- Ticket Status Chart -->
-    <div class="chart-container" data-chart-type="status">
-      <div class="chart-header">
-        <h4>Ticket Status</h4>
-        
-      </div>
-      <canvas id="statusChart"></canvas>
-    </div>
-  </div>
+                  </div>
+                  <div class="chart-scroll-container">
+                    <canvas id="salesChart"></canvas>
+                  </div>
+                </div>
 
-  <div class="chart-row">
-    <!-- Daily Tickets Trend Chart -->
-    <div class="chart-container" data-chart-type="trend">
-      <div class="chart-header">
-        <h4>Daily Tickets Trend</h4>
-        
-      </div>
-      <div class="chart-scroll-container">
-        <canvas id="dailyTrendChart"></canvas>
-      </div>
-    </div>
+                <!-- Ticket Status Chart -->
+                <div class="chart-container" data-chart-type="status">
+                  <div class="chart-header">
+                    <h4>Ticket Status</h4>
 
-    <!-- Terminal Performance Chart -->
-    <div class="chart-container" data-chart-type="terminal">
-      <div class="chart-header">
-        <h4>Terminal Performance</h4>
-        
-      </div>
-      <canvas id="terminalChart"></canvas>
-    </div>
-  </div>
+                  </div>
+                  <canvas id="statusChart"></canvas>
+                </div>
+              </div>
 
-  <!-- Top Destinations Chart (full width) -->
-  <div class="chart-container full-width" data-chart-type="destination">
-    <div class="chart-header">
-      <h4>Top Destinations</h4>
-      
-    </div>
-    <div class="chart-scroll-container">
-      <canvas id="destinationsChart"></canvas>
-    </div>
-  </div>
-</div>
+              <div class="chart-row">
+                <!-- Daily Tickets Trend Chart -->
+                <div class="chart-container" data-chart-type="trend">
+                  <div class="chart-header">
+                    <h4>Daily Tickets Trend</h4>
+
+                  </div>
+                  <div class="chart-scroll-container">
+                    <canvas id="dailyTrendChart"></canvas>
+                  </div>
+                </div>
+
+                <!-- Terminal Performance Chart -->
+                <div class="chart-container" data-chart-type="terminal">
+                  <div class="chart-header">
+                    <h4>Terminal Performance</h4>
+
+                  </div>
+                  <canvas id="terminalChart"></canvas>
+                </div>
+              </div>
+
+              <!-- Top Destinations Chart (full width) -->
+              <div class="chart-container full-width" data-chart-type="destination">
+                <div class="chart-header">
+                  <h4>Top Destinations</h4>
+
+                </div>
+                <div class="chart-scroll-container">
+                  <canvas id="destinationsChart"></canvas>
+                </div>
+              </div>
+            </div>
           </div>
         <?php endif; ?>
       </section>
@@ -2202,13 +2698,13 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
 
         <div class="settings-group">
-    <h3>Quick Actions</h3>
-    <div class="form-group">
-        <a href="scanner.php" class="btn btn-primary" style="display: inline-block; margin-top: 10px;">
-            <i class="fas fa-qrcode"></i> Open Ticket Scanner
-        </a>
-    </div>
-</div>
+          <h3>Quick Actions</h3>
+          <div class="form-group">
+            <a href="scanner.php" class="btn btn-primary" style="display: inline-block; margin-top: 10px;">
+              <i class="fas fa-qrcode"></i> Open Ticket Scanner
+            </a>
+          </div>
+        </div>
 
         <form method="post" id="settings-form">
           <div class="settings-group">
@@ -2262,7 +2758,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           </div>
 
-          
+
 
           <div class="form-footer">
             <button type="submit" class="btn btn-primary" name="update_settings">
@@ -2403,9 +2899,9 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="disableclick.js"></script>
+  <script src="disableclick.js"></script>
 
-  
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       initNavigation();
@@ -2431,7 +2927,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Restore last viewed section
       restoreReportState();
 
-      
+
 
       document.querySelectorAll('.close-modal').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -2453,51 +2949,51 @@ document.addEventListener('DOMContentLoaded', function() {
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Add this to your JavaScript section
-document.addEventListener('DOMContentLoaded', function() {
-    // Add hover effect to stars in the ratings card
-    const stars = document.querySelectorAll('.stat-card3 .star');
-    stars.forEach(star => {
+    // Add this to your JavaScript section
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add hover effect to stars in the ratings card
+      const stars = document.querySelectorAll('.stat-card3 .star');
+      stars.forEach(star => {
         star.addEventListener('mouseover', function() {
-            const rating = parseInt(this.getAttribute('data-rating') || this.parentElement.getAttribute('data-rating') || 0);
-            highlightStars(rating);
+          const rating = parseInt(this.getAttribute('data-rating') || this.parentElement.getAttribute('data-rating') || 0);
+          highlightStars(rating);
         });
-        
+
         star.addEventListener('mouseout', function() {
-            resetStarColors();
+          resetStarColors();
         });
-    });
-    
-    function highlightStars(rating) {
+      });
+
+      function highlightStars(rating) {
         stars.forEach((star, index) => {
-            if (index < rating) {
-                star.classList.add('fas');
-                star.classList.remove('far');
-            } else {
-                star.classList.add('far');
-                star.classList.remove('fas');
-            }
+          if (index < rating) {
+            star.classList.add('fas');
+            star.classList.remove('far');
+          } else {
+            star.classList.add('far');
+            star.classList.remove('fas');
+          }
         });
-    }
-    
-    function resetStarColors() {
+      }
+
+      function resetStarColors() {
         const avgRating = <?php echo $ratings_stats['average_rating']; ?>;
         stars.forEach((star, index) => {
-            if (index < Math.floor(avgRating)) {
-                star.classList.add('fas');
-                star.classList.remove('far');
-            } else if (index === Math.floor(avgRating) && (avgRating - Math.floor(avgRating)) >= 0.5) {
-                star.classList.add('fas', 'fa-star-half-alt');
-                star.classList.remove('far', 'fa-star');
-            } else {
-                star.classList.add('far');
-                star.classList.remove('fas', 'fa-star-half-alt');
-            }
+          if (index < Math.floor(avgRating)) {
+            star.classList.add('fas');
+            star.classList.remove('far');
+          } else if (index === Math.floor(avgRating) && (avgRating - Math.floor(avgRating)) >= 0.5) {
+            star.classList.add('fas', 'fa-star-half-alt');
+            star.classList.remove('far', 'fa-star');
+          } else {
+            star.classList.add('far');
+            star.classList.remove('fas', 'fa-star-half-alt');
+          }
         });
-    }
-});
+      }
+    });
 
-    
+
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2511,7 +3007,7 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function(e) {
           e.preventDefault();
 
-          
+
           // Update active state
           document.querySelectorAll('.sidebar-menu a').forEach(item => {
             item.classList.remove('active');
@@ -3523,303 +4019,325 @@ document.addEventListener('DOMContentLoaded', function() {
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
     function confirmDeleteTicket(event, ticketId) {
       event.preventDefault();
-
       showCustomConfirm({
         title: 'Confirm Ticket Deletion',
-        message: `Are you sure you want to delete ticket #VT${String(ticketId).padStart(4, '0')}? This action cannot be undone.`,
-        icon: 'fas fa-ticket-alt',
+        message: `Are you sure you want to delete ticket #VT${String(ticketId).padStart(4, '0')}?`,
+        icon: 'fas fa-trash',
         onConfirm: () => {
-          // Submit the form
-          event.target.closest('form').submit();
-        },
-        onCancel: () => {
-          // Optional: Add any cleanup if needed
-          console.log('Deletion cancelled');
+          const form = event.target.closest('form');
+          fetch(form.action, {
+              method: 'POST',
+              body: new FormData(form)
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                // Remove the table row
+                form.closest('tr').remove();
+                showSuccessMessage(data.message);
+              } else {
+                showErrorMessage(data.message);
+              }
+            })
+            .catch(error => {
+              showErrorMessage('Error deleting ticket');
+            });
         }
       });
-
-      return false;
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the revenue chart
-    renderRevenueChartv2();
-    
-    // Add event listeners for chart type toggle buttons
-    document.querySelectorAll('[data-chart="revenueChartv2"]').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const chartType = this.getAttribute('data-type');
-            if (window.revenueChartv2) {
-                window.revenueChartv2.config.type = chartType;
-                window.revenueChartv2.update();
-            }
-        });
-    });
-});
+      // Initialize the revenue chart
+      renderRevenueChartv2();
 
-function renderRevenueChartv2() {
-    // Get current date
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    
-    // Get monthly revenue data via AJAX
-    fetch('get_monthly_revenue.php?year=' + currentYear)
+      // Add event listeners for chart type toggle buttons
+      document.querySelectorAll('[data-chart="revenueChartv2"]').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const chartType = this.getAttribute('data-type');
+          if (window.revenueChartv2) {
+            window.revenueChartv2.config.type = chartType;
+            window.revenueChartv2.update();
+          }
+        });
+      });
+    });
+
+    function renderRevenueChartv2() {
+      // Get current date
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+
+      // Get monthly revenue data via AJAX
+      fetch('get_monthly_revenue.php?year=' + currentYear)
         .then(response => response.json())
         .then(data => {
-            const ctx = document.getElementById('revenueChartv2').getContext('2d');
-            
-            // Month names for labels
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            
-            // Prepare data for current year
-            const currentYearData = Array(12).fill(0);
-            data.currentYear.forEach(item => {
-                currentYearData[item.month - 1] = item.revenue;
+          const ctx = document.getElementById('revenueChartv2').getContext('2d');
+
+          // Month names for labels
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+          ];
+
+          // Prepare data for current year
+          const currentYearData = Array(12).fill(0);
+          data.currentYear.forEach(item => {
+            currentYearData[item.month - 1] = item.revenue;
+          });
+
+          // Prepare data for previous year if available
+          let previousYearData = null;
+          if (data.previousYear) {
+            previousYearData = Array(12).fill(0);
+            data.previousYear.forEach(item => {
+              previousYearData[item.month - 1] = item.revenue;
             });
-            
-            // Prepare data for previous year if available
-            let previousYearData = null;
-            if (data.previousYear) {
-                previousYearData = Array(12).fill(0);
-                data.previousYear.forEach(item => {
-                    previousYearData[item.month - 1] = item.revenue;
-                });
-            }
-            
-            // Create datasets
-            const datasets = [{
-                label: currentYear + ' Revenue',
-                data: currentYearData,
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                borderColor: 'rgb(36, 24, 92)',
-                borderWidth: 2,
-                tension: 0.1,
-                fill: true
-            }];
-            
-            // Add previous year data if available
-            if (previousYearData) {
-                datasets.push({
-                    label: (currentYear - 1) + ' Revenue',
-                    data: previousYearData,
-                    backgroundColor: 'rgba(160, 162, 167, 0.2)',
-                    borderColor: 'rgba(201, 203, 207, 1)',
-                    borderWidth: 2,
-                    tension: 0.1,
-                    fill: false,
-                    borderDash: [5, 5]
-                });
-            }
-            
-            // Create the chart
-            window.revenueChartv2 = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: monthNames,
-                    datasets: datasets
+          }
+
+          // Create datasets
+          const datasets = [{
+            label: currentYear + ' Revenue',
+            data: currentYearData,
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgb(36, 24, 92)',
+            borderWidth: 2,
+            tension: 0.1,
+            fill: true
+          }];
+
+          // Add previous year data if available
+          if (previousYearData) {
+            datasets.push({
+              label: (currentYear - 1) + ' Revenue',
+              data: previousYearData,
+              backgroundColor: 'rgba(160, 162, 167, 0.2)',
+              borderColor: 'rgba(201, 203, 207, 1)',
+              borderWidth: 2,
+              tension: 0.1,
+              fill: false,
+              borderDash: [5, 5]
+            });
+          }
+
+          // Create the chart
+          window.revenueChartv2 = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: monthNames,
+              datasets: datasets
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'top',
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.dataset.label + ': ₱' + context.raw.toLocaleString();
-                                }
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Monthly Revenue Comparison',
-                            font: {
-                                size: 16
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return '₱' + value.toLocaleString();
-                                }
-                            }
-                        }
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      return context.dataset.label + ': ₱' + context.raw.toLocaleString();
                     }
+                  }
+                },
+                title: {
+                  display: true,
+                  text: 'Monthly Revenue Comparison',
+                  font: {
+                    size: 16
+                  }
                 }
-            });
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    callback: function(value) {
+                      return '₱' + value.toLocaleString();
+                    }
+                  }
+                }
+              }
+            }
+          });
         })
         .catch(error => console.error('Error loading monthly revenue data:', error));
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function renderCharts() {
-    // Get the date range from the report
-    const startDate = '<?php echo $current_report["start_date"] ?? date("Y-m-d", strtotime("-30 days")); ?>';
-    const endDate = '<?php echo $current_report["end_date"] ?? date("Y-m-d"); ?>';
-    
-    // Function to fetch and render a chart
-    function renderChart(chartId, chartType, chartOptions = {}) {
-        fetch(`charts.php?chart=${chartType}&start_date=${startDate}&end_date=${endDate}`)
-            .then(response => response.json())
-            .then(data => {
-                const ctx = document.getElementById(chartId).getContext('2d');
-                
-                // Default options
-                const defaults = {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) label += ': ';
-                                    if (chartType === 'salesChart' || chartType === 'terminalChart') {
-                                        label += '₱' + context.raw.toLocaleString();
-                                    } else {
-                                        label += context.raw;
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    if (chartType === 'salesChart' || chartType === 'terminalChart') {
-                                        return '₱' + value.toLocaleString();
-                                    }
-                                    return value;
-                                }
-                            }
-                        }
-                    }
-                };
-                
-                // Merge with custom options
-                const options = {...defaults, ...chartOptions};
-                
-                // Create chart
-                window[chartId] = new Chart(ctx, {
-                    type: chartType.includes('Chart') ? 'bar' : 'doughnut', // Default types
-                    data: {
-                        labels: data.labels || [],
-                        datasets: [{
-                            label: chartType.replace('Chart', ''),
-                            data: data.values || [],
-                            backgroundColor: data.colors || [
-                                'rgba(54, 162, 235, 0.6)',
-                                'rgba(255, 99, 132, 0.6)',
-                                'rgba(75, 192, 192, 0.6)',
-                                'rgba(255, 159, 64, 0.6)',
-                                'rgba(153, 102, 255, 0.6)'
-                            ],
-                            borderColor: data.colors || [
-                                'rgba(54, 162, 235, 1)',
-                                'rgba(255, 99, 132, 1)',
-                                'rgba(75, 192, 192, 1)',
-                                'rgba(255, 159, 64, 1)',
-                                'rgba(153, 102, 255, 1)'
-                            ],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: options
-                });
-            })
-            .catch(error => console.error(`Error loading ${chartId} data:`, error));
     }
-    
-    // Render each chart with specific options
-    renderChart('destinationsChart', 'destinationsChart', {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function renderCharts() {
+      // Get the date range from the report
+      const startDate = '<?php echo $current_report["start_date"] ?? date("Y-m-d", strtotime("-30 days")); ?>';
+      const endDate = '<?php echo $current_report["end_date"] ?? date("Y-m-d"); ?>';
+
+      // Function to fetch and render a chart
+      function renderChart(chartId, chartType, chartOptions = {}) {
+        fetch(`charts.php?chart=${chartType}&start_date=${startDate}&end_date=${endDate}`)
+          .then(response => response.json())
+          .then(data => {
+            const ctx = document.getElementById(chartId).getContext('2d');
+
+            // Default options
+            const defaults = {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'top',
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      let label = context.dataset.label || '';
+                      if (label) label += ': ';
+                      if (chartType === 'salesChart' || chartType === 'terminalChart') {
+                        label += '₱' + context.raw.toLocaleString();
+                      } else {
+                        label += context.raw;
+                      }
+                      return label;
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    callback: function(value) {
+                      if (chartType === 'salesChart' || chartType === 'terminalChart') {
+                        return '₱' + value.toLocaleString();
+                      }
+                      return value;
+                    }
+                  }
+                }
+              }
+            };
+
+            // Merge with custom options
+            const options = {
+              ...defaults,
+              ...chartOptions
+            };
+
+            // Create chart
+            window[chartId] = new Chart(ctx, {
+              type: chartType.includes('Chart') ? 'bar' : 'doughnut', // Default types
+              data: {
+                labels: data.labels || [],
+                datasets: [{
+                  label: chartType.replace('Chart', ''),
+                  data: data.values || [],
+                  backgroundColor: data.colors || [
+                    'rgba(54, 162, 235, 0.6)',
+                    'rgba(255, 99, 132, 0.6)',
+                    'rgba(75, 192, 192, 0.6)',
+                    'rgba(255, 159, 64, 0.6)',
+                    'rgba(153, 102, 255, 0.6)'
+                  ],
+                  borderColor: data.colors || [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(153, 102, 255, 1)'
+                  ],
+                  borderWidth: 1
+                }]
+              },
+              options: options
+            });
+          })
+          .catch(error => console.error(`Error loading ${chartId} data:`, error));
+      }
+
+      // Render each chart with specific options
+      renderChart('destinationsChart', 'destinationsChart', {
         plugins: {
-            title: {
-                display: true,
-                text: 'Top Destinations by Ticket Count',
-                font: { size: 16 }
+          title: {
+            display: true,
+            text: 'Top Destinations by Ticket Count',
+            font: {
+              size: 16
             }
+          }
         }
-    });
-    
-    renderChart('terminalChart', 'terminalChart', {
+      });
+
+      renderChart('terminalChart', 'terminalChart', {
         plugins: {
-            title: {
-                display: true,
-                text: 'Terminal Performance by Revenue',
-                font: { size: 16 }
+          title: {
+            display: true,
+            text: 'Terminal Performance by Revenue',
+            font: {
+              size: 16
             }
+          }
         }
-    });
-    
-    renderChart('dailyTrendChart', 'dailyTrendChart', {
+      });
+
+      renderChart('dailyTrendChart', 'dailyTrendChart', {
         plugins: {
-            title: {
-                display: true,
-                text: 'Daily Ticket Sales Trend',
-                font: { size: 16 }
+          title: {
+            display: true,
+            text: 'Daily Ticket Sales Trend',
+            font: {
+              size: 16
             }
+          }
         }
-    });
-    
-    renderChart('statusChart', 'statusChart', {
+      });
+
+      renderChart('statusChart', 'statusChart', {
         type: 'doughnut',
         plugins: {
-            title: {
-                display: true,
-                text: 'Ticket Status Distribution',
-                font: { size: 16 }
+          title: {
+            display: true,
+            text: 'Ticket Status Distribution',
+            font: {
+              size: 16
             }
+          }
         }
-    });
-    
-    renderChart('salesChart', 'salesChart', {
-        plugins: {
-            title: {
-                display: true,
-                text: 'Daily Revenue Trend',
-                font: { size: 16 }
-            }
-        }
-    });
-}
+      });
 
-document.addEventListener('DOMContentLoaded', function() {
-    // ... existing code ...
-    
-    // Initialize charts if report data exists
-    <?php if (isset($current_report)): ?>
+      renderChart('salesChart', 'salesChart', {
+        plugins: {
+          title: {
+            display: true,
+            text: 'Daily Revenue Trend',
+            font: {
+              size: 16
+            }
+          }
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // ... existing code ...
+
+      // Initialize charts if report data exists
+      <?php if (isset($current_report)): ?>
         renderCharts();
-    <?php endif; ?>
-});
+      <?php endif; ?>
+    });
   </script>
 </body>
 

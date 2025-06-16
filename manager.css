@@ -968,6 +968,30 @@ tr:hover {
   color: #4dabf7;
 }
 
+
+
+
+.ticket-checkbox {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+#select-all {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+#delete-selected {
+    margin-left: 10px;
+    display: none;
+}
+
+#delete-selected.show {
+    display: inline-block;
+}
+
 /* ----------------------------------------------------------------------------------------------------------- 
    -----------------------------------------------------------------------------------------------------------
    -----------------------------------------------------------------------------------------------------------
@@ -1959,6 +1983,10 @@ tr:hover {
   overflow-y: auto;
   padding-right: 5px;
 }
+.ticket-action-form, .ticket-delete-form {
+    display: inline-block;
+    margin-right: 5px;
+}
 
 .ticket-item {
   display: flex;
@@ -2671,6 +2699,39 @@ tr:hover {
    -----------------------------------------------------------------------------------------------------------
    -----------------------------------------------------------------------------------------------------------
    -----------------------------------------------------------------------------------------------------------*/
+
+/* Boundary Management Styles */
+.boundary-form {
+    display: flex;
+    gap: 5px;
+}
+
+.boundary-form .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    min-width: 30px;
+}
+
+.date-filter-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.date-filter-form .form-group {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.date-filter-form input[type="date"] {
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+
 
 .van-modal {
   display: none;

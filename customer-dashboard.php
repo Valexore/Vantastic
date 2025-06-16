@@ -92,7 +92,6 @@ VALUES ($user_id, $terminal_id, $destination_id, $passenger_count, $baggage_coun
                          VALUES ($ticket_id, '$barcode_value')";
         mysqli_query($conn, $barcode_query);
         
-        $_SESSION['success_message'] = "Ticket booked successfully! Your barcode is: $barcode_value";
         header("Location: customer-dashboard.php#ticket-history");
         exit();
   } else {
