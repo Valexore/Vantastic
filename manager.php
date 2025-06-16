@@ -322,32 +322,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['delete_ticket']) || 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Handle van status update
+// In your status update handler:
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_van_status'])) {
-  $van_id = mysqli_real_escape_string($conn, $_POST['van_id']);
-  $new_status = mysqli_real_escape_string($conn, $_POST['status']);
+    $van_id = mysqli_real_escape_string($conn, $_POST['van_id']);
+    $new_status = mysqli_real_escape_string($conn, $_POST['status']);
 
-  // Validate the status value
-  $allowed_statuses = ['active', 'maintenance', 'inactive'];
-  if (!in_array($new_status, $allowed_statuses)) {
-    $_SESSION['error_message'] = "Invalid status value";
+    // Only update status, not boundary fields
+    $update_query = "UPDATE vans SET status = ? WHERE id = ?";
+    $stmt = mysqli_prepare($conn, $update_query);
+    mysqli_stmt_bind_param($stmt, "ss", $new_status, $van_id);
+    
+    if (mysqli_stmt_execute($stmt)) {
+        $_SESSION['success_message'] = "Van status updated successfully!";
+    } else {
+        $_SESSION['error_message'] = "Error updating van status: " . mysqli_error($conn);
+    }
+    
     header("Location: manager.php#van-management");
     exit();
-  }
-
-  // Update van status
-  $update_query = "UPDATE vans SET status = ? WHERE id = ?";
-  $stmt = mysqli_prepare($conn, $update_query);
-  mysqli_stmt_bind_param($stmt, "ss", $new_status, $van_id);
-
-  if (mysqli_stmt_execute($stmt)) {
-    $_SESSION['success_message'] = "Van status updated successfully!";
-  } else {
-    $_SESSION['error_message'] = "Error updating van status: " . mysqli_error($conn);
-  }
-
-  header("Location: manager.php#van-management");
-  exit();
 }
+
+
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_maintenance'])) {
   $van_id = mysqli_real_escape_string($conn, $_POST['van_id']);
@@ -1825,7 +1821,7 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
 
 
       <!-- Van Management Section -->
-      <section id="van-management" class="dashboard-section">
+    <section id="van-management" class="dashboard-section">
         <div class="dashboard-header">
           <h2>Van Management</h2>
           <div class="filter-controls">
@@ -1890,6 +1886,7 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
                 <th>Model</th>
                 <th>Terminal</th>
                 <th>Status</th>
+                <th>Counts</th>
                 <th>Driver</th>
                 <th>Date Added</th>
                 <th>Actions</th>
@@ -1902,26 +1899,64 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
                   <td><?php echo htmlspecialchars($van['license_plate']); ?></td>
                   <td><?php echo htmlspecialchars($van['model']); ?></td>
                   <td><?php echo htmlspecialchars($van['terminal_name']); ?></td>
-                  <td>
-                    <form method="post" class="van-status-form">
-                      <input type="hidden" name="van_id" value="<?php echo htmlspecialchars($van['id']); ?>">
-                      <div class="status-badge-container">
-                        <span class="status-badge status-<?php echo $van['status']; ?>"
-                          onclick="showStatusOptions(this)"
-                          data-current-status="<?php echo $van['status']; ?>">
-                          <?php echo ucfirst($van['status']); ?>
-                        </span>
-                        <div class="status-options">
-                          <span class="status-option status-active"
-                            onclick="changeVanStatus(this, 'active')">Active</span>
-                          <span class="status-option status-maintenance"
-                            onclick="changeVanStatus(this, 'maintenance')">Maintenance</span>
-                          <span class="status-option status-inactive"
-                            onclick="changeVanStatus(this, 'inactive')">Inactive</span>
-                        </div>
-                      </div>
-                    </form>
-                  </td>
+
+
+
+
+<td>
+    <!-- Status dropdown (unchanged) -->
+    <form method="post" class="van-status-form">
+        <input type="hidden" name="van_id" value="<?php echo htmlspecialchars($van['id']); ?>">
+        <div class="status-badge-container">
+            <span class="status-badge status-<?php echo $van['status']; ?>"
+                onclick="showStatusOptions(this)"
+                data-current-status="<?php echo $van['status']; ?>">
+                <?php echo ucfirst($van['status']); ?>
+            </span>
+            <div class="status-options">
+                <span class="status-option status-active" onclick="changeVanStatus(this, 'active')">Active</span>
+                <span class="status-option status-maintenance" onclick="changeVanStatus(this, 'maintenance')">Maintenance</span>
+                <span class="status-option status-inactive" onclick="changeVanStatus(this, 'inactive')">Inactive</span>
+            </div>
+        </div>
+    </form>
+</td>
+
+<td>
+    <!-- Boundary controls - now always visible but conditionally enabled -->
+    <div class="boundary-controls">
+        <button class="btn btn-sm btn-success increment-boundary" 
+                data-van-id="<?php echo htmlspecialchars($van['id']); ?>"
+                title="Increment Boundary"
+                <?php echo $van['status'] !== 'active' ? 'disabled' : ''; ?>>
+            <i class="fas fa-plus"></i>
+        </button>
+        <span class="boundary-amount">
+            <?php echo $van['current_boundary'] ?? 0; ?> counts
+        </span>
+        <button class="btn btn-sm btn-danger decrement-boundary" 
+                data-van-id="<?php echo htmlspecialchars($van['id']); ?>"
+                title="Decrement Boundary"
+                <?php echo $van['status'] !== 'active' ? 'disabled' : ''; ?>>
+            <i class="fas fa-minus"></i>
+        </button>
+    </div>
+    <div class="boundary-info">
+        <small class="<?php echo $van['status'] !== 'active' ? 'text-muted' : ''; ?>">
+            <?php 
+            $isToday = (isset($van['boundary_date']) && $van['boundary_date'] == date('Y-m-d'));
+            echo $isToday ? ($van['boundary_count'] ?? 0) . ' today' : 'No payments today';
+            ?>
+            <?php if($van['status'] !== 'active'): ?>
+                <br><span class="text-warning">(Van not active)</span>
+            <?php endif; ?>
+        </small>
+    </div>
+</td>
+
+
+
+
                   <td><?php echo htmlspecialchars($van['driver_name'] ?? '-'); ?></td>
                   <td><?php echo $van['last_maintenance'] ? date('Y-m-d', strtotime($van['last_maintenance'])) : '-'; ?></td>
                   <td>
@@ -2025,55 +2060,53 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
         </div>
     </div>
 
-    <div class="data-table">
-        <table id="boundaries-table">
-            <thead>
-                <tr>
-                    <th>Van ID</th>
-                    <th>License Plate</th>
-                    <th>Terminal</th>
-                    <th>Boundary Time</th>
-                    <th>Driver</th>
-                    <th>Passenger Count</th>
-                    <th>Boundary Amount</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                // Get today's boundaries by default
-                $query = "SELECT b.*, v.license_plate, v.driver_name, t.name as terminal_name 
-                          FROM van_boundaries b
-                          JOIN vans v ON b.van_id = v.id
-                          JOIN terminals t ON v.terminal_id = t.id
-                          WHERE DATE(b.boundary_time) = '$today'
-                          ORDER BY b.boundary_time DESC";
-                $result = mysqli_query($conn, $query);
-                
-                if ($result && mysqli_num_rows($result) > 0) {
-                    while ($row = mysqli_fetch_assoc($result)) {
-                        echo '<tr>';
-                        echo '<td>' . htmlspecialchars($row['van_id']) . '</td>';
-                        echo '<td>' . htmlspecialchars($row['license_plate']) . '</td>';
-                        echo '<td>' . htmlspecialchars($row['terminal_name']) . '</td>';
-                        echo '<td>' . date('M j, Y H:i', strtotime($row['boundary_time'])) . '</td>';
-                        echo '<td>' . htmlspecialchars($row['driver_name'] ?? '-') . '</td>';
-                        echo '<td>' . $row['passenger_count'] . '</td>';
-                        echo '<td>₱' . number_format($row['boundary_amount'], 2) . '</td>';
-                        echo '<td>';
-                        echo '<button class="btn btn-sm btn-primary edit-boundary" data-boundary-id="' . $row['id'] . '">';
-                        echo '<i class="fas fa-edit"></i> Edit';
-                        echo '</button>';
-                        echo '</td>';
-                        echo '</tr>';
-                    }
-                } else {
-                    echo '<tr><td colspan="8">No boundary records found for today</td></tr>';
-                }
-                ?>
-            </tbody>
-        </table>
+    <div class="active-vans-boundary">
+    <h3>Active Vans Boundary Status</h3>
+
+
+    <div class="van-boundary-cards">
+        <?php
+        $query = "SELECT v.id, v.license_plate, v.driver_name, v.current_boundary, 
+                         v.boundary_count, t.name as terminal_name
+                  FROM vans v
+                  JOIN terminals t ON v.terminal_id = t.id
+                  WHERE v.status = 'active'
+                  ORDER BY t.name, v.id";
+        $result = mysqli_query($conn, $query);
+        
+        while ($van = mysqli_fetch_assoc($result)) {
+$isToday = (isset($van['boundary_date']) && $van['boundary_date'] !== null && $van['boundary_date'] == date('Y-m-d'));
+            $boundaryClass = $isToday ? 'has-boundary' : 'no-boundary';
+            ?>
+
+
+          <div class="van-boundary-card <?php echo $isToday ? 'has-boundary' : 'no-boundary'; ?>">
+    <div class="van-info">
+        <span class="van-id"><?php echo htmlspecialchars($van['id']); ?></span>
+        <span class="license-plate"><?php echo htmlspecialchars($van['license_plate']); ?></span>
+        <span class="terminal"><?php echo htmlspecialchars($van['terminal_name']); ?></span>
     </div>
+    <div class="boundary-status">
+        <div class="boundary-amount">
+            <?php echo $van['current_boundary'] ?? 0; ?> counts
+        </div>
+        <div class="boundary-count">
+            <?php echo $isToday ? ($van['boundary_count'] ?? 0) . ' trips' : 'No trips today'; ?>
+        </div>
+    </div>
+    <?php if (!empty($van['driver_name'])): ?>
+        <div class="driver-name">
+            <i class="fas fa-user"></i> <?php echo htmlspecialchars($van['driver_name']); ?>
+        </div>
+    <?php endif; ?>
+</div>
+
+            
+        <?php } ?>
+    </div>
+</div>
+
+
 
     <!-- Boundary Report Modal -->
     <div class="modal" id="boundary-report-modal">
@@ -2175,7 +2208,7 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
                         </div>
                         <div class="form-group">
                             <label for="boundary-amount">Boundary Amount (₱):</label>
-                            <input type="number" id="boundary-amount" name="boundary_amount" step="0.01" min="0" required>
+                            <input type="number" id="boundary-amount" name="boundary_amount" step="0" min="0" required>
                         </div>
                     </div>
                     <div class="form-group">
@@ -2192,8 +2225,79 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
     </div>
 </section>
 
-<!-- Add this JavaScript to your existing script section -->
+
 <script>
+
+// Add this to your existing JavaScript
+function initBoundaryControls() {
+    // Increment boundary
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.increment-boundary')) {
+            const vanId = e.target.closest('.increment-boundary').dataset.vanId;
+            adjustBoundary(vanId, 'increment');
+        }
+        
+        if (e.target.closest('.decrement-boundary')) {
+            const vanId = e.target.closest('.decrement-boundary').dataset.vanId;
+            adjustBoundary(vanId, 'decrement');
+        }
+    });
+}
+
+function adjustBoundary(vanId, action) {
+    const amount = prompt(`Enter count to ${action}:`, '1');
+    if (amount === null || isNaN(amount) || parseInt(amount) <= 0) {
+        alert('Please enter a valid whole number (1 or more)');
+        return;
+    }
+
+    // Add CSRF token to the request
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+    fetch('adjust_boundary.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `van_id=${vanId}&action=${action}&amount=${parseInt(amount)}&csrf_token=${csrfToken}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the UI
+            const row = document.querySelector(`tr[data-van-id="${vanId}"]`);
+            if (row) {
+                const boundaryAmount = row.querySelector('.boundary-amount');
+                const boundaryInfo = row.querySelector('.boundary-info small');
+                
+                // Changed to display whole numbers only
+                boundaryAmount.textContent = `${parseInt(data.new_boundary)} counts`;
+                boundaryInfo.textContent = `${parseInt(data.boundary_count)} today`;
+                
+                showSuccessMessage(data.message);
+            }
+        } else {
+            showErrorMessage(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showErrorMessage('Error updating boundary count');
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
     // Initialize boundary management
     function initBoundaryManagement() {
         // Boundary filters
@@ -3763,12 +3867,15 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    // Change van status
-    function changeVanStatus(element, newStatus) {
-      const form = element.closest('tr').querySelector('.van-status-form');
-      const vanId = form.querySelector('input[name="van_id"]').value;
+// Update your changeVanStatus function to refresh the row after status change
+function changeVanStatus(element, newStatus) {
+    const form = element.closest('.van-status-form');
+    const vanId = form.querySelector('input[name="van_id"]').value;
+    const currentStatus = element.closest('.status-badge-container').querySelector('.status-badge').dataset.currentStatus;
 
-      if (confirm(`Are you sure you want to change this van's status to ${newStatus}?`)) {
+    if (newStatus === currentStatus) return;
+
+    if (confirm(`Are you sure you want to change this van's status to ${newStatus}?`)) {
         // Create a form and submit it
         const statusForm = document.createElement('form');
         statusForm.method = 'POST';
@@ -3789,13 +3896,73 @@ if ($ratings_result && mysqli_num_rows($ratings_result) > 0) {
         actionInput.name = 'update_van_status';
         actionInput.value = '1';
 
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = document.querySelector('input[name="csrf_token"]').value;
+
         statusForm.appendChild(vanInput);
         statusForm.appendChild(statusInput);
         statusForm.appendChild(actionInput);
+        statusForm.appendChild(csrfInput);
         document.body.appendChild(statusForm);
         statusForm.submit();
-      }
     }
+}
+
+// Update boundary controls when status changes (via event delegation)
+document.addEventListener('DOMContentLoaded', function() {
+    // This will work even if the table is reloaded via AJAX
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('van-status-select')) {
+            const row = e.target.closest('tr');
+            const vanId = row.dataset.vanId;
+            const newStatus = e.target.value;
+            
+            // Enable/disable boundary buttons based on status
+            const incBtn = row.querySelector('.increment-boundary');
+            const decBtn = row.querySelector('.decrement-boundary');
+            
+            if (newStatus === 'active') {
+                incBtn.removeAttribute('disabled');
+                decBtn.removeAttribute('disabled');
+            } else {
+                incBtn.setAttribute('disabled', 'disabled');
+                decBtn.setAttribute('disabled', 'disabled');
+            }
+        }
+    });
+});
+
+
+// Update boundary controls when status changes (via event delegation)
+document.addEventListener('DOMContentLoaded', function() {
+    // This will work even if the table is reloaded via AJAX
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('van-status-select')) {
+            const row = e.target.closest('tr');
+            const vanId = row.dataset.vanId;
+            const newStatus = e.target.value;
+            
+            // Enable/disable boundary buttons based on status
+            const incBtn = row.querySelector('.increment-boundary');
+            const decBtn = row.querySelector('.decrement-boundary');
+            
+            if (newStatus === 'active') {
+                incBtn.removeAttribute('disabled');
+                decBtn.removeAttribute('disabled');
+            } else {
+                incBtn.setAttribute('disabled', 'disabled');
+                decBtn.setAttribute('disabled', 'disabled');
+            }
+        }
+    });
+});
+
+
+
+
 
     // Show status options
     function showStatusOptions(element) {
