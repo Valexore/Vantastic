@@ -4,43 +4,61 @@ include 'config.php';
 
 $message = '';
 $is_success = false;
+$show_otp_form = false;
+$email = '';
 
-if (isset($_GET['token'])) {
-    $verification_token = $_GET['token'];
-    
-    // Prepare statement to find user with this token
-    $stmt = $conn->prepare("SELECT id, verification_token_expiry FROM users WHERE verification_token = ? AND is_verified = 0");
-    $stmt->bind_param("s", $verification_token);
-    $stmt->execute();
-    $stmt->store_result();
-    
-    if ($stmt->num_rows === 0) {
-        $message = 'Invalid or expired verification link.';
+// Handle OTP verification form submission
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['verify_otp'])) {
+    if (empty($_POST['email']) || empty($_POST['otp'])) {
+        $message = 'Both email and OTP are required.';
     } else {
-        $stmt->bind_result($user_id, $expiry_time);
-        $stmt->fetch();
+        $email = trim($_POST['email']);
+        $otp = trim($_POST['otp']);
+
+        // Check if user exists with this email and OTP
+        $stmt = $conn->prepare("SELECT id, verification_token, verification_token_expiry FROM users WHERE email = ? AND is_verified = 0");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
         
-        // Check if token is expired
-        if (strtotime($expiry_time) < time()) {
-            $message = 'Verification link has expired. Please request a new one.';
-            
-            // Optionally delete the expired token
-            $conn->query("UPDATE users SET verification_token = NULL, verification_token_expiry = NULL WHERE id = $user_id");
+        if ($result->num_rows === 0) {
+            $message = 'Email not found or account already verified.';
         } else {
-            // Mark user as verified and clear token
-            $update_stmt = $conn->prepare("UPDATE users SET is_verified = 1, verification_token = NULL, verification_token_expiry = NULL WHERE id = ?");
-            $update_stmt->bind_param("i", $user_id);
+            $user = $result->fetch_assoc();
             
-            if ($update_stmt->execute()) {
-                $is_success = true;
-                $message = 'Email verified successfully! You can now log in.';
+            // Check if OTP matches and is not expired
+            if ($user['verification_token'] !== $otp) {
+                $message = 'Invalid OTP code.';
+            } elseif (strtotime($user['verification_token_expiry']) < time()) {
+                $message = 'OTP has expired. Please request a new one.';
+                
+                // Clear expired OTP
+                $conn->query("UPDATE users SET verification_token = NULL, verification_token_expiry = NULL WHERE id = {$user['id']}");
             } else {
-                $message = 'Verification failed. Please try again.';
+                // Verify the user
+                $update_stmt = $conn->prepare("UPDATE users SET is_verified = 1, verification_token = NULL, verification_token_expiry = NULL WHERE id = ?");
+                $update_stmt->bind_param("i", $user['id']);
+                
+                if ($update_stmt->execute()) {
+                    $is_success = true;
+                    $message = 'Email verified successfully! You can now log in.';
+                } else {
+                    $message = 'Verification failed. Please try again.';
+                }
             }
         }
     }
-} else {
-    $message = 'No verification token provided.';
+} 
+// Handle case when user comes from registration (show OTP form)
+elseif (isset($_GET['email'])) {
+    $email = trim($_GET['email']);
+    $show_otp_form = true;
+    $message = 'Please enter the 6-digit OTP sent to your email.';
+}
+// Handle case when someone accesses verify.php directly
+else {
+    $message = 'Please complete the registration process first.';
+    $show_otp_form = false;
 }
 ?>
 <!DOCTYPE html>
@@ -146,6 +164,62 @@ if (isset($_GET['token'])) {
         .error {
             color: #f87171;
         }
+        
+        /* OTP Form Styles */
+        .otp-form {
+            display: <?php echo $show_otp_form && !$is_success ? 'block' : 'none'; ?>;
+            margin-top: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            color: var(--white);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        input[type="email"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--white);
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input[type="email"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--white);
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .otp-input {
+            letter-spacing: 5px;
+            font-size: 24px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .resend-link {
+            color: var(--white);
+            text-decoration: underline;
+            cursor: pointer;
+            display: inline-block;
+            margin-top: 15px;
+        }
+        
+        .resend-link:hover {
+            color: #e0e0e0;
+        }
     </style>
 </head>
 <body>
@@ -162,13 +236,27 @@ if (isset($_GET['token'])) {
             <?php endif; ?>
         </div>
         
-        <h1><?php echo $is_success ? 'Verification Successful!' : 'Verification Failed'; ?></h1>
+        <h1><?php echo $is_success ? 'Verification Successful!' : ($show_otp_form ? 'Verify Your Email' : 'Verification Failed'); ?></h1>
         
         <p><?php echo $message; ?></p>
         
+        <!-- OTP Verification Form -->
+        <form method="POST" action="verify.php" class="otp-form">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($email); ?>" required readonly>
+            </div>
+            <div class="form-group">
+                <label for="otp">6-digit OTP</label>
+                <input type="text" id="otp" name="otp" class="otp-input" maxlength="6" pattern="\d{6}" title="Please enter exactly 6 digits" required>
+            </div>
+            <button type="submit" name="verify_otp" class="btn">Verify OTP</button>
+            <a href="resend_otp.php?email=<?php echo urlencode($email); ?>" class="resend-link">Resend OTP</a>
+        </form>
+        
         <?php if ($is_success): ?>
             <a href="login.php" class="btn">Go to Login</a>
-        <?php else: ?>
+        <?php elseif (!$show_otp_form): ?>
             <a href="register.php" class="btn">Try Again</a>
         <?php endif; ?>
     </div>

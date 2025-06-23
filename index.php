@@ -1,8 +1,54 @@
-  <?php
-  session_start();
-  include 'config.php';
+<?php
+session_start();
+include 'config.php';
+$response = ['success' => false, 'message' => ''];
 
-  ?>
+// Handle OTP verification if it's being submitted
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['otp'])) {
+    $email = trim($_POST['email']);
+    $otp = trim($_POST['otp']);
+    
+    // Validate OTP (6 digits)
+    if (strlen($otp) !== 6 || !ctype_digit($otp)) {
+        $response['message'] = 'Invalid OTP format';
+        echo json_encode($response);
+        exit;
+    }
+    
+    // Check if OTP matches and is not expired
+    $current_time = date('Y-m-d H:i:s');
+    $stmt = $conn->prepare("SELECT id, verification_token FROM users WHERE email = ? AND verification_token_expiry > ?");
+    $stmt->bind_param("ss", $email, $current_time);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 1) {
+        $user = $result->fetch_assoc();
+        
+        if ($user['verification_token'] === $otp) {
+            // OTP is valid - mark user as verified
+            $update_stmt = $conn->prepare("UPDATE users SET is_verified = 1, verification_token = NULL, verification_token_expiry = NULL WHERE id = ?");
+            $update_stmt->bind_param("i", $user['id']);
+            
+            if ($update_stmt->execute()) {
+                $response['success'] = true;
+                $response['message'] = 'Verification successful! Your account is now active.';
+                $_SESSION['verified_email'] = $email; // Store verified email in session
+            } else {
+                $response['message'] = 'Error updating verification status';
+            }
+        } else {
+            $response['message'] = 'Invalid OTP code';
+        }
+    } else {
+        $response['message'] = 'OTP expired or invalid. Please request a new one.';
+    }
+    
+    // Return JSON response that will be handled by JavaScript to show alerts
+    echo json_encode($response);
+    exit;
+}
+?>
 
   <!DOCTYPE html>
   <html lang="en">
@@ -263,6 +309,20 @@
         </div>
       </div>
     </div>
+
+
+
+<form id="otpForm" method="post">
+    <input type="hidden" name="email" value="<?php echo htmlspecialchars($_GET['email'] ?? ''); ?>">
+    <div>
+        <label for="otp">Enter OTP:</label>
+        <input type="text" id="otp" name="otp" required maxlength="6">
+    </div>
+    <button type="submit">Verify OTP</button>
+</form>
+
+<div id="message"></div>
+
 
 
 
@@ -1478,7 +1538,283 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-<!-- Security Answer Modal -->
+<!-- OTP Verification Modal -->
+<div id="otp-modal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal">&times;</span>
+    <h2>Verify Your Email</h2>
+    <p style="text-align: center; margin-bottom: 20px;">We've sent a 6-digit code to your email. Please enter it below:</p>
+    
+    <form id="otp-form" method="post" action="index.php">
+      <input type="hidden" id="otp-email" name="email">
+      
+      <div class="otp-input-container">
+        <input type="text" id="otp1" name="otp1" maxlength="1" pattern="[0-9]" required>
+        <input type="text" id="otp2" name="otp2" maxlength="1" pattern="[0-9]" required>
+        <input type="text" id="otp3" name="otp3" maxlength="1" pattern="[0-9]" required>
+        <input type="text" id="otp4" name="otp4" maxlength="1" pattern="[0-9]" required>
+        <input type="text" id="otp5" name="otp5" maxlength="1" pattern="[0-9]" required>
+        <input type="text" id="otp6" name="otp6" maxlength="1" pattern="[0-9]" required>
+      </div>
+      
+      <input type="hidden" id="full-otp" name="otp">
+      
+      <div class="otp-footer">
+        <button typ="submit" class="verify-btn">Verify</button>
+        <p>Didn't receive a code? <a href="#" id="resend-otp">Resend</a></p>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  /* OTP Modal Styles */
+  .otp-input-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+  }
+  
+  .otp-input-container input {
+    width: 50px;
+    height: 60px;
+    text-align: center;
+    font-size: 24px;
+    border: 2px solid #0e386a;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #0e386a;
+    transition: all 0.3s;
+  }
+  
+  .otp-input-container input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 5px rgba(74, 144, 226, 0.5);
+  }
+  
+  .verify-btn {
+    background-color: #0e386a;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 100%;
+    margin-top: 15px;
+  }
+  
+  .verify-btn:hover {
+    background-color: #4a90e2;
+    transform: translateY(-2px);
+  }
+  
+  .otp-footer {
+    text-align: center;
+    margin-top: 20px;
+  }
+  
+  .otp-footer a {
+    color: #0e386a;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  
+  .otp-footer a:hover {
+    text-decoration: underline;
+  }
+</style>
+
+<script>
+// OTP Verification Modal Functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const otpModal = document.getElementById('otp-modal');
+  const otpForm = document.getElementById('otp-form');
+  const otpInputs = document.querySelectorAll('.otp-input-container input');
+  const fullOtpInput = document.getElementById('full-otp');
+  const resendOtpLink = document.getElementById('resend-otp');
+  
+  // Function to show OTP modal with email
+function showOtpModal(email) {
+  const otpModal = document.getElementById('otp-modal');
+  document.getElementById('otp-email').value = email;
+  otpModal.style.display = 'flex';
+  document.body.classList.add('no-scroll');
+  
+  // Focus first OTP input
+  setTimeout(() => {
+    const firstInput = document.getElementById('otp1');
+    if (firstInput) firstInput.focus();
+  }, 100);
+}
+  
+  // Function to close OTP modal
+  function closeOtpModal() {
+    otpModal.style.display = 'none';
+    document.body.classList.remove('no-scroll');
+  }
+  
+  // Close modal when clicking X
+  otpModal.querySelector('.close-modal').addEventListener('click', closeOtpModal);
+  
+  // Close modal when clicking outside
+  otpModal.addEventListener('click', function(e) {
+    if (e.target === otpModal) {
+      closeOtpModal();
+    }
+  });
+  
+  // OTP input handling
+  otpInputs.forEach((input, index) => {
+    // Allow only numbers
+    input.addEventListener('input', function() {
+      this.value = this.value.replace(/[^0-9]/g, '');
+      
+      // Auto-focus next input
+      if (this.value.length === 1 && index < otpInputs.length - 1) {
+        otpInputs[index + 1].focus();
+      }
+    });
+    
+    // Handle backspace
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && this.value.length === 0 && index > 0) {
+        otpInputs[index - 1].focus();
+      }
+    });
+    
+    // Handle paste
+    input.addEventListener('paste', function(e) {
+      e.preventDefault();
+      const pasteData = e.clipboardData.getData('text').replace(/[^0-9]/g, '');
+      
+      if (pasteData.length === 6) {
+        for (let i = 0; i < 6; i++) {
+          if (index + i < otpInputs.length) {
+            otpInputs[index + i].value = pasteData[i];
+          }
+        }
+      }
+    });
+  });
+  
+  // Combine OTP digits before form submission
+  otpForm.addEventListener('submit', function(e) {
+    let otp = '';
+    otpInputs.forEach(input => {
+      otp += input.value;
+    });
+    
+    fullOtpInput.value = otp;
+    
+    // Basic validation
+    if (otp.length !== 6) {
+      e.preventDefault();
+      alert('Please enter a complete 6-digit code');
+      return;
+    }
+  });
+  
+  // Resend OTP functionality
+  resendOtpLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    const email = document.getElementById('otp-email').value;
+    
+    if (!email) {
+      alert('Email not found. Please try registering again.');
+      return;
+    }
+    
+    fetch('resend_otp.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `email=${encodeURIComponent(email)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('New OTP sent to your email!');
+        
+        // Clear existing OTP inputs
+        otpInputs.forEach(input => {
+          input.value = '';
+        });
+        
+        // Focus first input
+        otpInputs[0].focus();
+      } else {
+        alert(data.message || 'Failed to resend OTP. Please try again.');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('An error occurred. Please try again.');
+    });
+  });
+  
+  // After successful registration, show OTP modal
+  document.getElementById('register-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showOtpModal(formData.get('email'));
+      } else {
+        showErrorModal(data.message || 'Registration failed. Please try again.');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showErrorModal('Network error. Please try again.');
+    });
+  });
+});
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <!-- Security Answer Modal -->
 <div id="security-answer-modal" class="modal vt-security-modal">
   <div class="modal-content vt-security-content">

@@ -3,11 +3,57 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 header('Content-Type: application/json');
+
 include 'config.php';
 
 $response = ['success' => false, 'message' => ''];
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+// Handle OTP verification if it's being submitted
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['otp'])) {
+    $email = trim($_POST['email']);
+    $otp = trim($_POST['otp']);
+    
+    // Validate OTP (6 digits)
+    if (strlen($otp) !== 6 || !ctype_digit($otp)) {
+        $response['message'] = 'Invalid OTP format';
+        echo json_encode($response);
+        exit;
+    }
+    
+    // Check if OTP matches and is not expired
+    $current_time = date('Y-m-d H:i:s');
+    $stmt = $conn->prepare("SELECT id, verification_token FROM users WHERE email = ? AND verification_token_expiry > ?");
+    $stmt->bind_param("ss", $email, $current_time);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 1) {
+        $user = $result->fetch_assoc();
+        
+        if ($user['verification_token'] === $otp) {
+            // OTP is valid - mark user as verified
+            $update_stmt = $conn->prepare("UPDATE users SET is_verified = 1, verification_token = NULL, verification_token_expiry = NULL WHERE id = ?");
+            $update_stmt->bind_param("i", $user['id']);
+            
+            if ($update_stmt->execute()) {
+                $response['success'] = true;
+                $response['message'] = 'Verification successful! Your account is now active.';
+            } else {
+                $response['message'] = 'Error updating verification status';
+            }
+        } else {
+            $response['message'] = 'Invalid OTP code';
+        }
+    } else {
+        $response['message'] = 'OTP expired or invalid. Please request a new one.';
+    }
+    
+    echo json_encode($response);
+    exit;
+}
+
+// Handle registration if it's being submitted
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['otp'])) {
     // Verify all required fields exist
     $required_fields = ['full_name', 'email', 'password', 'confirm_password', 'security_answer'];
     foreach ($required_fields as $field) {
@@ -73,15 +119,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    // Generate verification token and expiry (24 hours from now)
-    $verification_token = bin2hex(random_bytes(32));
-    $verification_expiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
+    // Generate 6-digit OTP and expiry (10 minutes from now)
+    $otp = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
+    $verification_expiry = date('Y-m-d H:i:s', strtotime('+10 minutes'));
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
     $hashed_security_answer = password_hash($security_answer, PASSWORD_DEFAULT);
     
-    // Insert new user
-    $insert_stmt = $conn->prepare("INSERT INTO users (full_name, email, password, security_answer, verification_token, verification_token_expiry) VALUES (?, ?, ?, ?, ?, ?)");
-    $insert_stmt->bind_param("ssssss", $full_name, $email, $hashed_password, $hashed_security_answer, $verification_token, $verification_expiry);
+    // Insert new user (initially unverified)
+    $insert_stmt = $conn->prepare("INSERT INTO users (full_name, email, password, security_answer, verification_token, verification_token_expiry, is_verified) VALUES (?, ?, ?, ?, ?, ?, 0)");
+    $insert_stmt->bind_param("ssssss", $full_name, $email, $hashed_password, $hashed_security_answer, $otp, $verification_expiry);
     
     if ($insert_stmt->execute()) {
         $user_id = $insert_stmt->insert_id;
@@ -109,16 +155,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             // Content
             $mail->isHTML(true);
-            $mail->Subject = 'Verify Your Email Address';
+            $mail->Subject = 'Your Verification OTP';
             
-            $verification_link = "https:///whatif/verify.php?token=$verification_token";
             $mail->Body = "
             <!DOCTYPE html>
             <html>
             <head>
                 <meta charset='UTF-8'>
                 <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-                <title>Email Verification | Van Tastic</title>
+                <title>OTP Verification | Van Tastic</title>
                 <style>
                     body {
                         font-family: 'Poppins', sans-serif;
@@ -154,38 +199,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         font-size: 18px;
                         margin-bottom: 20px;
                     }
-                    .button {
-                        display: inline-block;
-                        background-color: #0e386a;
-                        color: white !important;
-                        text-decoration: none;
-                        padding: 12px 24px;
-                        border-radius: 6px;
-                        font-weight: 600;
-                        margin: 20px 0;
+                    .otp-code {
+                        font-size: 32px;
+                        letter-spacing: 5px;
+                        color: #0e386a;
+                        font-weight: bold;
                         text-align: center;
-                        transition: background-color 0.3s;
-                    }
-                    .button:hover {
-                        background-color: #4a90e2;
-                    }
-                    .verification-link {
-                        word-break: break-all;
+                        margin: 20px 0;
+                        padding: 15px;
                         background-color: #f5f7fa;
-                        padding: 12px;
                         border-radius: 6px;
-                        margin: 20px 0;
-                        font-size: 14px;
-                        color: #6c757d;
-                        border: 1px solid #e1e5eb;
-                    }
-                    .footer {
-                        margin-top: 30px;
-                        padding-top: 20px;
-                        border-top: 1px solid #e1e5eb;
-                        font-size: 12px;
-                        color: #6c757d;
-                        text-align: center;
+                        border: 1px dashed #0e386a;
                     }
                     .expiry-notice {
                         color: #722f37;
@@ -199,6 +223,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     .user-name {
                         font-weight: 600;
                         color: #0e386a;
+                    }
+                    .footer {
+                        margin-top: 30px;
+                        padding-top: 20px;
+                        border-top: 1px solid #e1e5eb;
+                        font-size: 12px;
+                        color: #6c757d;
+                        text-align: center;
                     }
                 </style>
             </head>
@@ -214,16 +246,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         
                         <p class='welcome-text'>Hello <span class='user-name'>$full_name</span>,</p>
                         
-                        <p>Thank you for registering with Van Tastic! To complete your account setup, please verify your email address by clicking the button below:</p>
+                        <p>Thank you for registering with Van Tastic! To complete your account setup, please use the following OTP code:</p>
                         
-                        <p style='text-align: center;'>
-                            <a href='$verification_link' class='button'>Verify My Email</a>
-                        </p>
+                        <div class='otp-code'>$otp</div>
                         
-                        <p>If the button doesn't work, copy and paste this link into your browser:</p>
-                        <div class='verification-link'>$verification_link</div>
-                        
-                        <p class='expiry-notice'>This verification link will expire in 24 hours.</p>
+                        <p class='expiry-notice'>This OTP will expire in 10 minutes.</p>
                         
                         <p>If you didn't create an account with Van Tastic, please ignore this email or contact our support team if you have any concerns.</p>
                         
@@ -238,17 +265,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             ";
             
             $mail->AltBody = "Hello $full_name,\n\n"
-                ."Thank you for registering with Van Tastic! To complete your account setup, please verify your email address by visiting this link:\n\n"
-                ."$verification_link\n\n"
-                ."This verification link will expire in 24 hours.\n\n"
-                ."If you didn't create an account with Van Tastic, please ignore this email or contact our support team if you have any concerns.\n\n"
+                ."Thank you for registering with Van Tastic! To complete your account setup, please use the following OTP code:\n\n"
+                ."OTP: $otp\n\n"
+                ."This OTP will expire in 10 minutes.\n\n"
+                ."If you didn't create an account with Van Tastic, please ignore this email.\n\n"
                 ."© ".date('Y')." Van Tastic. All rights reserved.";
             $mail->send();
             
             $response['success'] = true;
-            $response['message'] = 'Registration successful! Please check your email to verify your account.';
+            $response['message'] = 'Registration successful! Please check your email for the 6-digit verification code.';
         } catch (Exception $e) {
-            $response['message'] = 'Registration successful but verification email could not be sent. Please contact support.';
+            $response['message'] = 'Registration successful but OTP email could not be sent. Please contact support.';
         }
     } else {
         $response['message'] = 'Error: Registration failed. Please try again.';
@@ -258,4 +285,3 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 echo json_encode($response);
-?>
